@@ -24,7 +24,7 @@ typedef struct T
 } QuadraticTest;
 
 
-/* Constant serving as persion - decider for comparing doubles*/
+/* Constant serving as presion - decider for comparing doubles */
 const double EPSILON = 0.00001;
 
 int Quadratic (); // bad name

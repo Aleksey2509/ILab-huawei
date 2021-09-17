@@ -20,18 +20,12 @@ void getCoefficients (double* a, double* b, double* c)
 
     printf("\nHello! This is the programm, which solves quadratic equations, v0.1!\n"
            "Given the standart form of quadratic equation as ax^2+bx+c=0\n"
-           "Enter coefficient a: ");
-    varCount += scanf ("%lf", a);
-    
-    printf("\nEnter coefficient b: ");
-    varCount += scanf ("%lf", b);
-
-    printf("\nEnter coefficient c: ");
-    varCount += scanf ("%lf", c);
+           "Enter coefficient a b c with that punctuation (just spaces): ");
+    varCount += scanf ("%lf %lf %lf", a, b, c);
 
     if (varCount != 3)
     {
-        printf("You were told to enter three numbers, dummy\n");
+        printf("You probably did not follow the punctuation mentioned earlier; exiting the programm\n");
         exit(1);
     }
 }
@@ -40,6 +34,8 @@ void getCoefficients (double* a, double* b, double* c)
 
 RootsState solveQuadratic (double a, double b, double c, double* x1, double* x2)
 {
+
+    assert( x1 != x2 );
 
     if (doubleCompare(a,0) == 0)
     {
