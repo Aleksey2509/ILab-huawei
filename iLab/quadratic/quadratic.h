@@ -1,6 +1,6 @@
 
 /* This enum helps to show the state of roots of quadratic equations */
-enum RootsState {Fatal = -1000, Infinite, EntryError, Zero = 0, One, Two}; // Fatal = 'f';
+enum RootsState {Fatal = -1000, Infinite, EntryError, Zero = 0, One, Two};
 
 
 /* These strings are for coloring when printing test results */
@@ -27,7 +27,7 @@ typedef struct T
 /* Constant serving as presion - decider for comparing doubles */
 const double EPSILON = 0.00001;
 
-int Quadratic (); // bad name
+int Quadratic ();
 
 /* Solves quadratic equation
  *
