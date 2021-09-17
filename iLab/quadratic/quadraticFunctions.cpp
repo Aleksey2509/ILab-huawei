@@ -79,6 +79,8 @@ RootsState solveQuadratic (double a, double b, double c, double* x1, double* x2)
 
 RootsState solveLinear (double a, double b, double* x1, double* x2)
 {
+    assert( x1 != x2 );
+
     if (a != 0)
     {
         *x1 = *x2 = -b/(a);
