@@ -35,7 +35,7 @@ int UnitTest()
 
         if ( (rootState == TestArray[i].ExpectedRootState) && ( doubleCompare(x1, TestArray[i].x1) == 0) && ( doubleCompare(x2, TestArray[i].x2) == 0 ) )
         {
-            printf("Test %d: solveQuadratic (%7.3lf, %7.3lf, %7.3lf) - %s OK%s\n" , i, TestArray[i].a, TestArray[i].b, TestArray[i].c, 
+            printf("Test %d: solveQuadratic (%7.3lf, %7.3lf, %7.3lf) - %sOK%s\n" , i, TestArray[i].a, TestArray[i].b, TestArray[i].c, 
                     set_green, set_default);
         }
         else

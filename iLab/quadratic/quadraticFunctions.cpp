@@ -1,5 +1,7 @@
 #include "quadratic.h"
 
+
+
 int Quadratic ()
 {
     double a = NAN, b = NAN, c = NAN;
@@ -27,7 +29,7 @@ void getCoefficients (double* a, double* b, double* c)
 
     if (varCount != 3)
     {
-        printf("You probably did not follow the punctuation mentioned earlier; exiting the programm\n");
+        printf("You probably did not follow the punctuation mentioned earlier or entered a symbol instead of number; exiting the programm\n");
         exit(1);
     }
 }
@@ -83,14 +85,14 @@ RootsState solveLinear (double a, double b, double* x1, double* x2)
 {
     assert( x1 != x2 );
 
-    if (a != 0)
+    if ( doubleCompare(a , 0) != 0 )
     {
         *x1 = *x2 = -b/(a);
         
         return One;
     }
 
-    else if (b != 0)
+    else if ( doubleCompare(b , 0) != 0 )
     {
         return Zero;
     }
