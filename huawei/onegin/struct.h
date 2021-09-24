@@ -1,8 +1,14 @@
+struct line
+{
+    char* line;
+    int lineLen;
+};
+
 struct TEXT
 {
     char* buffer;
     long long buffSize;
-    char** lineArray;
+    line* lines;
     int nLines;
-    int* lineLen;
 };
+

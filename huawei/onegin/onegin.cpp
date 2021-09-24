@@ -15,23 +15,28 @@
 
 int main(int argc, char* argv[])
 {
-    TEXT text = {0, 0, 0, 0};
+
+    TEXT text;
+
+ 
 
     if (argc < 3)
     {
         printf("You did not specify name of the input or the output file\n");
         exit(1);
     }
+    
+    text.lines = (line *) calloc(MAX_LINES, sizeof(line));
 
 
-    text.lineArray = (char**) calloc(MAX_LINES, sizeof(char*));
 
     int Error = ReadFromFile(&text, argv[1]);
 
     //printf("Starting printing gotten string array: nLines = %d\n", text.nLines);
     //printText(&text);
 
-    qsort(text.lineArray, text.nLines, sizeof(char *), straightComparator);
+    
+    qsort(text.lines, text.nLines, sizeof(line), straightComparator);
 
     //printf("Printing gotten string array: nLines = %d\n", text.nLines);
     //printText(&text);

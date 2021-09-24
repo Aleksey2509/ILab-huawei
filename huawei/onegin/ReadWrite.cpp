@@ -18,20 +18,32 @@ int ReadFromFile(TEXT* text, const char* FileName)
         {
             text->buffer[i] = '\0';
         }
-    
     }
-
-   
 
     for (int i = 0; i < text->buffSize ;i++)
     {
+        if( (text->buffer[i] == 0) && ( (text->buffer[i - 1] == 0) || (i == 0) ) ) //skipping all consecutive \0
+            continue;
         
-        text->lineArray[text->nLines] = strdup(text->buffer + i);
-        //printf("\ngot %s, ", text->lineArray[text->nLines]);
-        i += strlen(text->lineArray[text->nLines]);
+        text->lines[text->nLines].line = strdup(text->buffer + i);
+        
+        //printf("\ngot %s, ", text->lines[text->nLines].line);
+        text->lines[text->nLines].lineLen = strlen(text->lines[text->nLines].line);
+        i += strlen(text->lines[text->nLines].line);
+        //printf("len = %d Now there are %d lines\n", text->lines[text->nLines].lineLen, text->nLines);
         text->nLines++;
-        //printf("Now there are %d lines", text->nLines);
+        
+        
     }
+
+    //printf("\n\nthere are %d lines\n", text->nLines);
+
+    text->lines = (line*)realloc (text->lines, text->nLines * sizeof(line));
+
+    // for (int j = 0; j < text->nLines; j++)
+    // {
+    //     printf("\n%s\n", text->lines[j].line);
+    // }
 
     return 0;
 
@@ -68,6 +80,8 @@ int AnotherReadFromFile( char* Index[], const char* FileName)
 
 }
 
+//------------------------------------------------------------------------------------------------------------------------------
+
 int createBuffer (const char* FileName, TEXT* text)
 {
     assert (FileName);
@@ -94,7 +108,7 @@ int printText(TEXT* text)
 {
     for (int i = 0; i < text->nLines; i++)
     {
-        printf("%s\n", text->lineArray[i]);
+        printf("%s\n", text->lines[i].line);
     }
     return 0;
 }
@@ -109,7 +123,7 @@ void PrintToFile (FILE * file, TEXT* text)
 
 	for(int i = 0; i < text->nLines; i++)
 	{
-		fputs(text->lineArray[i], file);
+		fputs(text->lines[i].line, file);
 		fputc('\n', file); 
 	}
     fclose(file);
@@ -121,9 +135,9 @@ void PrintToFile (FILE * file, TEXT* text)
 int Destroy (TEXT* text)
 {
     for (int i = 0; i < text->nLines; i++)
-        free(text->lineArray[i]);
+        free(text->lines[i].line);
 
-    free(text->lineArray);
+    free(text->lines);
 
     return 0;
 }
