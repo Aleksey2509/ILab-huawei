@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
     if (argc < 3)
     {
         printf("You did not specify name of the input or the output file\n");
-        exit(1);
+        return(1);
     }
     
     text.lines = (line *) calloc(MAX_LINES, sizeof(line));
@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
     //printText(&text);
 
     
-    qsort(text.lines, text.nLines, sizeof(line), straightComparator);
+    qsort(text.lines, text.nLines, sizeof(line), reverseComparator);
 
     //printf("Printing gotten string array: nLines = %d\n", text.nLines);
     //printText(&text);

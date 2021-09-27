@@ -58,6 +58,61 @@ int straightComparator (const void* arg1, const void* arg2)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
+int reverseComparator (const void* arg1, const void* arg2)
+{
+    const line* lineStruct1 = (const line* )arg1;
+    const line* lineStruct2 = (const line* )arg2;
+
+    const char* line1 = lineStruct1->line;
+    const char* line2 = lineStruct2->line;
+
+    const int len1 = lineStruct1->lineLen;
+    const int len2 = lineStruct2->lineLen;
+
+    int charlen1 = len1;
+    int charlen2 = len2;
+
+    //printf("Comparing %s and %s\n", line1, line2);
+
+    for (int i = len1, j = len2; (i > 0) && (j > 0); )
+    {
+        while ( !(isalpha(line1[i])) && (i > 0))
+        {
+            i--;
+            charlen1--;
+        }
+        while ( !(isalpha(line2[j])) && (i > 0) )
+        {
+            j--;
+            charlen2--;
+        }
+
+        //printf("charlen of %s = %d, charlen of %s = %d\n", line1, charlen1, line2, charlen2);
+
+        if ( (i == 0) || (j == 0) )
+        {
+            //printf("charlen1 = %d, charlen2 = %D\n", charlen1, charlen2);
+            if (charlen1 == charlen2)
+                    return 0;
+                else if (charlen1 < charlen2)
+                        return -1;
+                     else
+                        return 1;
+        }
+
+        //printf("\nline1 - %c, line2 - %c\n", line1[i], line2[i]);
+        int compRes = charComparator(line1[i], line2[j]);
+        if (compRes != 0)
+            return compRes;
+        i--;
+        j--;
+        
+    }
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
 int charComparator (char a, char b)
 {
     a = tolower(a);
@@ -82,6 +137,18 @@ int memswap (line* line1Ptr, line* line2Ptr)
     return 0;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------
+
+int voidmemswap (void* arg1, void* arg2, unsigned int DataSize)
+{
+    void* tmp = calloc(1, DataSize);
+    tmp = memcpy(tmp, arg1, DataSize);
+    arg1 = memcpy(arg1, arg2, DataSize);
+    arg2 = memcpy(arg2, tmp, DataSize);
+    free (tmp);
+
+    return 0;
+}
 
 //------------------------------------------------------------------------------------------------------------------------------
 

@@ -11,6 +11,8 @@ int ReadFromFile(TEXT* text, const char* FileName)
 
     int Error = createBuffer(FileName, text);
 
+    unsigned int ReallocTimes = 0;
+
     //printf("\n%llD\n", text->buffSize);
 
     for (int i = 0; i < text->buffSize; i++)
@@ -34,13 +36,15 @@ int ReadFromFile(TEXT* text, const char* FileName)
         i += strlen(text->lines[text->nLines].line);
         text->nLines++;
         //printf("len = %d Now there are %d lines\n", text->lines[text->nLines].lineLen, text->nLines);
+        if (text->nLines > (ReallocTimes + 1) * MAX_LINES)
+            text->lines = (line*)realloc (text->lines, (++ReallocTimes) * MAX_LINES * sizeof(line));
         
         
     }
 
     //printf("\n\nthere are %d lines\n", text->nLines);
-
-    text->lines = (line*)realloc (text->lines, text->nLines * sizeof(line));
+    if (text->nLines < MAX_LINES)
+        text->lines = (line*)realloc (text->lines, text->nLines * sizeof(line));
 
     // for (int j = 0; j < text->nLines; j++)
     // {
