@@ -32,8 +32,8 @@ int ReadFromFile(TEXT* text, const char* FileName)
         //printf("\ngot %s, ", text->lines[text->nLines].line);
         text->lines[text->nLines].lineLen = strlen(text->lines[text->nLines].line);
         i += strlen(text->lines[text->nLines].line);
-        //printf("len = %d Now there are %d lines\n", text->lines[text->nLines].lineLen, text->nLines);
         text->nLines++;
+        //printf("len = %d Now there are %d lines\n", text->lines[text->nLines].lineLen, text->nLines);
         
         
     }
