@@ -7,13 +7,7 @@
 #include <unistd.h>
 #include <ctype.h>
 
-enum ErrorCodes
-{
-    NOT_RESIZABLE = 0,
-    RESIZED,
-
-
-};
+const int MULT_CONST = 2;
 
 struct Stack
 {
@@ -23,7 +17,23 @@ struct Stack
 
 };
 
+int StackCtor (Stack* stack, unsigned long capacity);
+int StackResize (Stack* stack);
+int StackDtor (Stack* stack);
+int StackPush(Stack* stack, int value);
+int StackPop(Stack* stack);
+int printStack (Stack* stack);
+int Enlarge (Stack* stack);
+int Reduce (Stack* stack);
 
+
+enum ErrorCodes
+{
+    NOT_RESIZABLE = 0,
+    RESIZED,
+
+
+};
 
 int StackCtor (Stack* stack, unsigned long capacity)
 {
@@ -32,6 +42,8 @@ int StackCtor (Stack* stack, unsigned long capacity)
     stack->data = (int*)calloc(capacity, sizeof(int));
     stack->size = 0;
     stack->capacity = capacity;
+
+    return 0;
 }
 
 
@@ -41,49 +53,69 @@ int StackDtor (Stack* stack)
 
     stack->size = -1;
     free(stack->data);
-    stack->data = (int*) 13;
+    stack->data = (int*) 13; // 13 - not good
+
+    return 0;
 }
 
 int StackPush(Stack* stack, int value)
 {
     assert(stack);
 
+    if (stack->size == stack->capacity)
+        Enlarge (stack);
 
     stack->data [stack->size++] = value;
+
+    return 0;
 }
 
 int StackPop(Stack* stack)
 {
     assert(stack);
 
-    StackResize(stack);
+    if ( (stack->size < (stack->capacity / 2) - 1 ) && (stack->capacity > 4) )
+    {
+        printf("Starting reducing\n");
+        Reduce(stack);
+    }
+    return stack->data[--stack->size];
 
-    return(stack->data [stack->size--]);
 }
 
-int StackResize (Stack* stack)
+int printStack (Stack* stack)
 {
-    if (stack->size == stack->capacity)
+    for (int i = 0; i < stack->size; i++)
     {
-        int* tmp = (int*)realloc(stack->data, 2 * stack->capacity);
-
-        if(tmp != 0)
-        {
-            stack->data = tmp;
-            return RESIZED;
-
-        }
-        else return NOT_RESIZABLE;
+        printf("%d ", stack->data[i]);
     }
-    if ((stack->size == (stack->capacity / 2) - 2) && (stack->size > 4))
-    {
-        int* tmp = (int*)realloc(stack->data, stack->capacity / 2);
+    printf("size = %lu, capacity = %lu\n", stack->size, stack->capacity);
+    return 0;
+}
 
-        if(tmp != 0)
-        {
-            stack->data = tmp;
-            return RESIZED;
-        }
-        else return NOT_RESIZABLE;
-    }
+int Enlarge (Stack* stack)
+{
+    assert(stack);
+
+    int* tmp = (int*)realloc(stack->data, sizeof(int) * stack->capacity * MULT_CONST);
+    if(tmp == 0)
+        return NOT_RESIZABLE;
+
+    stack->data = tmp;
+    stack->capacity *= MULT_CONST;
+
+    return RESIZED;
+}
+
+int Reduce (Stack* stack)
+{
+    assert(stack);
+    
+    int* tmp = (int*)realloc(stack->data, sizeof(int) * stack->capacity / MULT_CONST);
+    if(tmp == 0)
+        return NOT_RESIZABLE;
+
+    stack->data = tmp;
+    stack->capacity /= MULT_CONST;
+    return RESIZED;
 }

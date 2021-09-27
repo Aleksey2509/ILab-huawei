@@ -4,6 +4,8 @@ const int MAX_LINES = 10000;
 
 const int MAX_LENGTH = 1000;
 
+//------------------------------------------------------------------------------------------------------------------------------
+
 int ReadFromFile(TEXT* text, const char* FileName)
 {
 
@@ -134,6 +136,7 @@ void PrintToFile (FILE * file, TEXT* text)
 
 int Destroy (TEXT* text)
 {
+    free(text->buffer);
     for (int i = 0; i < text->nLines; i++)
         free(text->lines[i].line);
 

@@ -4,30 +4,29 @@
 
 int straightComparator (const void* arg1, const void* arg2)
 {
-    const line line1 = *(const line* )arg1;
-    const line line2 = *(const line* )arg2;
+    const line* lineStruct1 = (const line* )arg1;
+    const line* lineStrcut2 = (const line* )arg2;
+
+    const char* line1 = lineStruct1->line;
+    const char* line2 = lineStrcut2->line;
 
     // printf("Comparing %s and %s\n", line1.line, line2.line);
-    int len = min(strlen(line1.line), strlen(line2.line));
+    int len = min(strlen(line1), strlen(line2));
 
     for (int i = 0, j = 0; (i < len + 1) && (j < len + 1); )
     {
-        while ( !isalpha(line1.line[i]) )
+        while ( !isalpha(line1[i]) && line1[i] != '\0' )
         {
             i++;
-            if (i == len)
-                return 0;
             continue;
         }
-        while ( !isalpha(line2.line[j]) )
+        while ( !isalpha(line2[j]) && line2[j] != '\0' )
         {
             j++;
-            if (i == len)
-                return 0;
             continue;
         }
         //printf("\nline1 - %c, line2 - %c\n", line1[i], line2[i]);
-        int compRes = charComparator(line1.line[i], line2.line[j]);
+        int compRes = charComparator(line1[i], line2[j]);
         if (compRes != 0)
             return compRes;
         i++;
