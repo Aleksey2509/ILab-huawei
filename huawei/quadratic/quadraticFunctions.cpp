@@ -38,8 +38,9 @@ void getCoefficients (double* a, double* b, double* c)
 
 RootsState solveQuadratic (double a, double b, double c, double* x1, double* x2)
 {
-
-    assert( x1 != x2 );
+    assert(x1 != NULL);
+    assert(x2 != NULL);
+    assert(x1 != x2);
 
     if (doubleCompare(a,0) == 0)
     {
@@ -83,7 +84,9 @@ RootsState solveQuadratic (double a, double b, double c, double* x1, double* x2)
 
 RootsState solveLinear (double a, double b, double* x1, double* x2)
 {
-    assert( x1 != x2 );
+    assert(x1 != NULL);
+    assert(x2 != NULL);
+    assert(x1 != x2);
 
     if ( doubleCompare(a , 0) != 0 )
     {

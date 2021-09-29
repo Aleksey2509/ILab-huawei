@@ -1,8 +1,8 @@
 #include "ReadWrite.h"
 
-const int MAX_LINES = 10000;
+/*static*/ const int MAX_LINES = 10000; // IN FILE???
 
-const int MAX_LENGTH = 1000;
+const int MAX_LENGTH = 1000; // MAX LINE LENGTH???
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -11,11 +11,13 @@ int ReadFromFile(TEXT* text, const char* FileName)
 
     int Error = createBuffer(FileName, text);
 
-    unsigned int ReallocTimes = 0;
+    unsigned int ReallocTimes = 0; // remove
+
+    // split
 
     //printf("\n%llD\n", text->buffSize);
 
-    for (int i = 0; i < text->buffSize; i++)
+    for (int i = 0; i < text->buffSize; i++) // remove copying
     {
 
         if(text->buffer[i] == '\n')
@@ -29,7 +31,7 @@ int ReadFromFile(TEXT* text, const char* FileName)
         if( (text->buffer[i] == 0) && ( (text->buffer[i - 1] == 0) || (i == 0) ) ) //skipping all consecutive \0
             continue;
         
-        text->lines[text->nLines].line = strdup(text->buffer + i);
+        text->lines[text->nLines].line = strdup(text->buffer + i); // remove copying
         
         //printf("\ngot %s, ", text->lines[text->nLines].line);
         text->lines[text->nLines].lineLen = strlen(text->lines[text->nLines].line);
@@ -43,7 +45,7 @@ int ReadFromFile(TEXT* text, const char* FileName)
     }
 
     //printf("\n\nthere are %d lines\n", text->nLines);
-    if (text->nLines < MAX_LINES)
+    if (text->nLines < MAX_LINES) // remove
         text->lines = (line*)realloc (text->lines, text->nLines * sizeof(line));
 
     // for (int j = 0; j < text->nLines; j++)
@@ -98,10 +100,11 @@ int createBuffer (const char* FileName, TEXT* text)
 
     long long size = FileInfo.st_size;
     text->buffer = (char*)calloc(size, sizeof(char));
-
+    // ptr check
     //printf("pointer is zero %d", text->buffer == NULL);
 
     FILE* input = fopen(FileName, "r");
+    // ptr check
     text->buffSize = fread(text->buffer, sizeof(char), FileInfo.st_size, input);
     fclose(input);
 

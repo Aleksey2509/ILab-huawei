@@ -10,15 +10,10 @@
 #include "compare.cpp"
 #include "ReadWrite.cpp"
 
-
-
-
 int main(int argc, char* argv[])
-{
+{ // remove all from main!!!
 
     TEXT text;
-
- 
 
     if (argc < 3)
     {
@@ -26,8 +21,8 @@ int main(int argc, char* argv[])
         return(1);
     }
     
-    text.lines = (line *) calloc(MAX_LINES, sizeof(line));
-
+    text.lines = (line *) calloc(MAX_LINES, sizeof(line)); // close in same file???
+    // nullptr check!!!
 
 
     int Error = ReadFromFile(&text, argv[1]);
@@ -41,7 +36,7 @@ int main(int argc, char* argv[])
     //printf("Printing gotten string array: nLines = %d\n", text.nLines);
     //printText(&text);
 
-    FILE* output = fopen(argv[2], "w");
+    FILE* output = fopen(argv[2], "w"); // close in same function!!!
 
     PrintToFile(output, &text);
 
