@@ -11,8 +11,7 @@
 #include "ReadWrite.cpp"
 
 int main(int argc, char* argv[])
-{ // remove all from main!!!
-
+{
     TEXT text;
 
     if (argc < 3)
@@ -20,25 +19,19 @@ int main(int argc, char* argv[])
         printf("You did not specify name of the input or the output file\n");
         return(1);
     }
-    
-    text.lines = (line *) calloc(MAX_LINES, sizeof(line)); // close in same file???
-    // nullptr check!!!
 
+    int Error = TEXT_ReadFromFile(&text, argv[1]);
 
-    int Error = ReadFromFile(&text, argv[1]);
+    if (Error)
+        PrintError(Error);
 
-    //printf("Starting printing gotten string array: nLines = %d\n", text.nLines);
-    //printText(&text);
+    qsort(text.lines, text.nLines, sizeof(line), ReverseComparator);
 
-    
-    qsort(text.lines, text.nLines, sizeof(line), reverseComparator);
-
-    //printf("Printing gotten string array: nLines = %d\n", text.nLines);
-    //printText(&text);
-
-    FILE* output = fopen(argv[2], "w"); // close in same function!!!
-
-    PrintToFile(output, &text);
+    Error = PrintTextToFile(argv[2], &text);
+    if (Error)
+        PrintError(Error);
 
     Destroy(&text);
+    
+    return 0;
 }

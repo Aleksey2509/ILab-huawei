@@ -1,57 +1,38 @@
 #include "ReadWrite.h"
 
-/*static*/ const int MAX_LINES = 10000; // IN FILE???
-
-const int MAX_LENGTH = 1000; // MAX LINE LENGTH???
-
 //------------------------------------------------------------------------------------------------------------------------------
 
-int ReadFromFile(TEXT* text, const char* FileName)
+int TEXT_ReadFromFile(TEXT* text, const char* FileName)
 {
+    unsigned int AllocedMemory = MAX_INPUT_LINES * sizeof(line);
 
-    int Error = createBuffer(FileName, text);
+    text->lines = (line *) calloc(MAX_INPUT_LINES, sizeof(line));
+    while ( !text->lines )
+        text->lines = ReallocLineArr(text->lines, &AllocedMemory, REDUCE);
 
-    unsigned int ReallocTimes = 0; // remove
+    int Error = CreateBuffer(FileName, text);
 
-    // split
-
-    //printf("\n%llD\n", text->buffSize);
-
-    for (int i = 0; i < text->buffSize; i++) // remove copying
+    if (Error)
     {
-
-        if(text->buffer[i] == '\n')
-        {
-            text->buffer[i] = '\0';
-        }
+        return Error;
     }
 
     for (int i = 0; i < text->buffSize ;i++)
     {
-        if( (text->buffer[i] == 0) && ( (text->buffer[i - 1] == 0) || (i == 0) ) ) //skipping all consecutive \0
-            continue;
-        
-        text->lines[text->nLines].line = strdup(text->buffer + i); // remove copying
-        
-        //printf("\ngot %s, ", text->lines[text->nLines].line);
-        text->lines[text->nLines].lineLen = strlen(text->lines[text->nLines].line);
-        i += strlen(text->lines[text->nLines].line);
+        size_t len = mystrlen(text->buffer + i);
+            if (len == 0)
+                continue;
+
+        text->lines[text->nLines].line = (text->buffer + i); // this line is somehow bad
+        text->lines[text->nLines].lineLen = len;
+
+        i += text->lines[text->nLines].lineLen;
         text->nLines++;
-        //printf("len = %d Now there are %d lines\n", text->lines[text->nLines].lineLen, text->nLines);
-        if (text->nLines > (ReallocTimes + 1) * MAX_LINES)
-            text->lines = (line*)realloc (text->lines, (++ReallocTimes) * MAX_LINES * sizeof(line));
-        
+
+        if (text->nLines > (AllocedMemory / sizeof(line)))
+            text->lines = ReallocLineArr(text->lines, &AllocedMemory, ENLARGE);
         
     }
-
-    //printf("\n\nthere are %d lines\n", text->nLines);
-    if (text->nLines < MAX_LINES) // remove
-        text->lines = (line*)realloc (text->lines, text->nLines * sizeof(line));
-
-    // for (int j = 0; j < text->nLines; j++)
-    // {
-    //     printf("\n%s\n", text->lines[j].line);
-    // }
 
     return 0;
 
@@ -59,20 +40,20 @@ int ReadFromFile(TEXT* text, const char* FileName)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int AnotherReadFromFile( char* Index[], const char* FileName)
+int Fgets_ReadFromFile( char* Index[], const char* FileName)
 {
     FILE* input = fopen(FileName, "r");
 
     int nLines = 0;
 
-    char buffer[MAX_LENGTH] = { 0 };
+    char buffer[MAX_LINE_LENGTH] = { 0 };
 
-    for (nLines = 0; nLines < MAX_LINES; nLines++)
+    for (nLines = 0; nLines < MAX_INPUT_LINES; nLines++)
     {
 
         printf("Here, i = %d\n", nLines);
 
-        if (fgets(buffer, MAX_LENGTH, input) == 0)
+        if (fgets(buffer, MAX_LINE_LENGTH, input) == 0)
             break;
 
         Index[nLines] = strdup (buffer);
@@ -90,7 +71,7 @@ int AnotherReadFromFile( char* Index[], const char* FileName)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int createBuffer (const char* FileName, TEXT* text)
+int CreateBuffer (const char* FileName, TEXT* text)
 {
     assert (FileName);
     assert(text);
@@ -100,11 +81,14 @@ int createBuffer (const char* FileName, TEXT* text)
 
     long long size = FileInfo.st_size;
     text->buffer = (char*)calloc(size, sizeof(char));
-    // ptr check
-    //printf("pointer is zero %d", text->buffer == NULL);
+
+    if ( text->buffer == NULL)
+        return CANT_ALLOC_BUF;
 
     FILE* input = fopen(FileName, "r");
-    // ptr check
+    if ( input == NULL)
+        return NULL_FL;
+
     text->buffSize = fread(text->buffer, sizeof(char), FileInfo.st_size, input);
     fclose(input);
 
@@ -113,30 +97,83 @@ int createBuffer (const char* FileName, TEXT* text)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int printText(TEXT* text)
+int PrintTextStdout(TEXT* text)
 {
     for (int i = 0; i < text->nLines; i++)
     {
-        printf("%s\n", text->lines[i].line);
+        PrintLineToFile(text->lines + i, stdout);
     }
     return 0;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-void PrintToFile (FILE * file, TEXT* text)
+int PrintTextToFile (char* path, TEXT* text)
 {
 
-	assert(file != NULL);
+	assert(path != NULL);
 	assert(text != NULL);
+
+    FILE* file = fopen(path, "w");
+    if ( file == NULL)
+        return NULL_FL;
 
 	for(int i = 0; i < text->nLines; i++)
 	{
-		fputs(text->lines[i].line, file);
-		fputc('\n', file); 
+		PrintLineToFile(text->lines + i, file);
 	}
     fclose(file);
 
+    return 0;
+
+}
+//------------------------------------------------------------------------------------------------------------------------------
+
+int PrintLineToFile(const line* str, FILE* stream)
+{
+    for (int i = 0; i < str->lineLen; i++)
+        fputc(str->line[i], stream);
+    fputc('\n', stream);
+
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+int PrintError (int Error)
+{
+    switch (Error)
+        {
+            case CANT_ALLOC_BUF: printf("Your file is too big");
+                                break;
+            case NULL_FL: printf("Could not open file");
+                          break;
+        }
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+size_t mystrlen(const char* string)
+{
+    size_t len = 0;
+    for (len = 0; (*string != '\n') && (*string != '\0') ; len++)
+        string++;
+    return (len);
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+line* ReallocLineArr (line* lines, unsigned int* AllocedMemory, int mode)
+{
+    if (mode == REDUCE)
+        *AllocedMemory /= MULT_CONST;
+    else
+        *AllocedMemory *= MULT_CONST;
+
+    lines = (line*)realloc (lines, *AllocedMemory);
+
+    return lines;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -144,9 +181,6 @@ void PrintToFile (FILE * file, TEXT* text)
 int Destroy (TEXT* text)
 {
     free(text->buffer);
-    for (int i = 0; i < text->nLines; i++)
-        free(text->lines[i].line);
-
     free(text->lines);
 
     return 0;

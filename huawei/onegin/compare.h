@@ -1,7 +1,11 @@
-int straightComparator (const void* arg1, const void* arg2);
+int StraightComparator (const void* arg1, const void* arg2);
 
-int charComparator (char a, char b);
+int ReverseComparator (const void* arg1, const void* arg2);
 
-int memswap (char** line1Ptr, char** line2Ptr);
+int CharComparator (char a, char b);
 
-int min (int a, int b);
+int MemSwap (char** line1Ptr, char** line2Ptr);
+
+int VoidMemSwap (void* arg1, void* arg2, unsigned int DataSize);
+
+int Min (int a, int b);

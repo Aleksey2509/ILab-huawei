@@ -2,7 +2,7 @@
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int straightComparator (const void* arg1, const void* arg2)
+int StraightComparator (const void* arg1, const void* arg2)
 {
     const line* lineStruct1 = (const line* )arg1;
     const line* lineStruct2 = (const line* )arg2;
@@ -17,16 +17,15 @@ int straightComparator (const void* arg1, const void* arg2)
     int charlen2 = len2;
 
     //printf("Comparing %s and %s\n", line1, line2);
-    int len = min(len1, len2);
 
-    for (int i = 0, j = 0; (i < len + 1) && (j < len + 1); )
+    for (int i = 0, j = 0; (i < len1 + 1) && (j < len2 + 1); )
     {
-        while ( !(isalpha(line1[i])) && (line1[i + 1] != '\0') )
+        while ( !(isalpha(line1[i])) && (line1[i + 1] != '\0') && (line1[i + 1] != '\n') )
         {
             i++;
             charlen1--;
         }
-        while ( !(isalpha(line2[j])) && (line2[j + 1] != '\0') )
+        while ( !(isalpha(line2[j])) && (line2[j + 1] != '\0') && (line1[i + 1] != '\n') )
         {
             j++;
             charlen2--;
@@ -36,17 +35,11 @@ int straightComparator (const void* arg1, const void* arg2)
 
         if ( (line1[i + 1] == 0) || (line2[j + 1] == 0) )
         {
-            //printf("charlen1 = %d, charlen2 = %D\n", charlen1, charlen2);
-            if (charlen1 == charlen2)
-                    return 0;
-                else if (charlen1 < charlen2)
-                        return -1;
-                     else
-                        return 1;
+            return (Min(charlen1, charlen2));
         }
 
         //printf("\nline1 - %c, line2 - %c\n", line1[i], line2[i]);
-        int compRes = charComparator(line1[i], line2[j]);
+        int compRes = CharComparator(line1[i], line2[j]);
         if (compRes != 0)
             return compRes;
         i++;
@@ -58,7 +51,7 @@ int straightComparator (const void* arg1, const void* arg2)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int reverseComparator (const void* arg1, const void* arg2)
+int ReverseComparator (const void* arg1, const void* arg2)
 {
     const line* lineStruct1 = (const line* )arg1;
     const line* lineStruct2 = (const line* )arg2;
@@ -92,16 +85,11 @@ int reverseComparator (const void* arg1, const void* arg2)
         if ( (i == 0) || (j == 0) )
         {
             //printf("charlen1 = %d, charlen2 = %D\n", charlen1, charlen2);
-            if (charlen1 == charlen2)
-                    return 0;
-                else if (charlen1 < charlen2)
-                        return -1;
-                     else
-                        return 1;
+            return (Min(charlen1, charlen2));
         }
 
         //printf("\nline1 - %c, line2 - %c\n", line1[i], line2[i]);
-        int compRes = charComparator(line1[i], line2[j]);
+        int compRes = CharComparator(line1[i], line2[j]);
         if (compRes != 0)
             return compRes;
         i--;
@@ -113,7 +101,7 @@ int reverseComparator (const void* arg1, const void* arg2)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int charComparator (char a, char b)
+int CharComparator (char a, char b)
 {
     a = tolower(a);
     b = tolower(b);
@@ -128,7 +116,7 @@ int charComparator (char a, char b)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int memswap (line* line1Ptr, line* line2Ptr)
+int MemSwap (line* line1Ptr, line* line2Ptr)
 {
     line tmp = *line1Ptr;
     *line1Ptr = *line2Ptr;
@@ -139,7 +127,7 @@ int memswap (line* line1Ptr, line* line2Ptr)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int voidmemswap (void* arg1, void* arg2, unsigned int DataSize)
+int VoidMemSwap (void* arg1, void* arg2, unsigned int DataSize)
 {
     void* tmp = calloc(1, DataSize);
     tmp = memcpy(tmp, arg1, DataSize);
@@ -153,10 +141,12 @@ int voidmemswap (void* arg1, void* arg2, unsigned int DataSize)
 //------------------------------------------------------------------------------------------------------------------------------
 
 
-int min (int a, int b)
+int Min (int a, int b)
 {
     if (a < b)
-        return a;
-    else
-        return b;
+        return -1;
+    else if (a > b)
+            return 1;
+    
+    return 0;
 }
