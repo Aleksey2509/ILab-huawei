@@ -23,7 +23,7 @@ int TEXT_ReadFromFile(TEXT* text, const char* FileName)
             if (len == 0)
                 continue;
 
-        text->lines[text->nLines].line = (text->buffer + i); // this line is somehow bad
+        text->lines[text->nLines].line = (text->buffer + i);
         text->lines[text->nLines].lineLen = len;
 
         i += text->lines[text->nLines].lineLen;
@@ -78,6 +78,10 @@ int CreateBuffer (const char* FileName, TEXT* text)
 
     struct stat FileInfo;
     int stat_flag = stat(FileName, &FileInfo);
+    if (stat_flag == -1)
+    {
+        return (CANT_GET_FL_INFO);
+    }
 
     long long size = FileInfo.st_size;
     text->buffer = (char*)calloc(size, sizeof(char));
@@ -144,10 +148,12 @@ int PrintError (int Error)
 {
     switch (Error)
         {
-            case CANT_ALLOC_BUF: printf("Your file is too big");
+            case CANT_ALLOC_BUF: printf("Your file is too big\n");
                                 break;
-            case NULL_FL: printf("Could not open file");
+            case NULL_FL: printf("Could not open file\n");
                           break;
+            case CANT_GET_FL_INFO: printf("Could not get file info\n");
+                                   break;
         }
     return 0;
 }
@@ -166,6 +172,8 @@ size_t mystrlen(const char* string)
 
 line* ReallocLineArr (line* lines, unsigned int* AllocedMemory, int mode)
 {
+    assert((mode == REDUCE) || (mode == ENLARGE));
+    
     if (mode == REDUCE)
         *AllocedMemory /= MULT_CONST;
     else
@@ -180,8 +188,10 @@ line* ReallocLineArr (line* lines, unsigned int* AllocedMemory, int mode)
 
 int Destroy (TEXT* text)
 {
-    free(text->buffer);
-    free(text->lines);
+    if (text->buffer != NULL)
+        free(text->buffer);
+    if (text->lines != NULL)
+        free(text->lines);
 
     return 0;
 }

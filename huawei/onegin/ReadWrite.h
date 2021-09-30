@@ -10,7 +10,8 @@ static const int MULT_CONST = 2;
 enum ERRORCODES
 {
     NULL_FL = -1000,
-    CANT_ALLOC_BUF
+    CANT_ALLOC_BUF,
+    CANT_GET_FL_INFO
 };
 
 int TEXT_ReadFromFile(TEXT* text, const char* FileName);

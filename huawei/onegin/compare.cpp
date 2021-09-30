@@ -35,7 +35,7 @@ int StraightComparator (const void* arg1, const void* arg2)
 
         if ( (line1[i + 1] == 0) || (line2[j + 1] == 0) )
         {
-            return (Min(charlen1, charlen2));
+            return (IntComparator(charlen1, charlen2));
         }
 
         //printf("\nline1 - %c, line2 - %c\n", line1[i], line2[i]);
@@ -85,7 +85,7 @@ int ReverseComparator (const void* arg1, const void* arg2)
         if ( (i == 0) || (j == 0) )
         {
             //printf("charlen1 = %d, charlen2 = %D\n", charlen1, charlen2);
-            return (Min(charlen1, charlen2));
+            return (IntComparator(charlen1, charlen2));
         }
 
         //printf("\nline1 - %c, line2 - %c\n", line1[i], line2[i]);
@@ -116,7 +116,18 @@ int CharComparator (char a, char b)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int MemSwap (line* line1Ptr, line* line2Ptr)
+int IntComparator (int a, int b)
+{
+    if (a < b)
+        return -1;
+    else if (a > b)
+            return 1;
+    
+    return 0;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+
+int LineSwap (line* line1Ptr, line* line2Ptr)
 {
     line tmp = *line1Ptr;
     *line1Ptr = *line2Ptr;
@@ -141,12 +152,3 @@ int VoidMemSwap (void* arg1, void* arg2, unsigned int DataSize)
 //------------------------------------------------------------------------------------------------------------------------------
 
 
-int Min (int a, int b)
-{
-    if (a < b)
-        return -1;
-    else if (a > b)
-            return 1;
-    
-    return 0;
-}

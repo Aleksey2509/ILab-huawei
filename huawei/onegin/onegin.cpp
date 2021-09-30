@@ -1,37 +1,32 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <assert.h>
-#include "struct.h"
-#include "compare.cpp"
-#include "ReadWrite.cpp"
-
-int main(int argc, char* argv[])
+int Onegin (int FileCount, char* FileArr[])
 {
-    TEXT text;
+    TEXT text = {0};
 
-    if (argc < 3)
+    if (FileCount < 2)
     {
         printf("You did not specify name of the input or the output file\n");
         return(1);
     }
 
-    int Error = TEXT_ReadFromFile(&text, argv[1]);
-
+    int Error = TEXT_ReadFromFile(&text, FileArr[0]);
     if (Error)
+    {
         PrintError(Error);
+        Destroy(&text);
+        return Error;
+    }
 
-    qsort(text.lines, text.nLines, sizeof(line), ReverseComparator);
+    qsort(text.lines, text.nLines, sizeof(line), StraightComparator);
 
-    Error = PrintTextToFile(argv[2], &text);
+    Error = PrintTextToFile(FileArr[1], &text);
     if (Error)
+    {
         PrintError(Error);
+        Destroy(&text);
+        return Error;
+    }
 
     Destroy(&text);
-    
+
     return 0;
 }
