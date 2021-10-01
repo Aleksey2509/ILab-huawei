@@ -135,7 +135,8 @@ int PrintTextToFile (char* path, TEXT* text)
 
 int PrintLineToFile(const line* str, FILE* stream)
 {
-    fprintf(stream, "%.*s\n", str->lineLen, str->line);
+    fwrite(str->line, sizeof(char), str->lineLen, stream);
+    fwrite("\n", sizeof(char), 1, stream);
 
     return 0;
 }
