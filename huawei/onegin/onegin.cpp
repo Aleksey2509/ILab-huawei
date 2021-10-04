@@ -16,7 +16,7 @@ int Onegin (int FileCount, char* FileArr[])
         return Error;
     }
 
-    qsort(text.lines, text.nLines, sizeof(line), StraightComparator);
+    Myqsort(text.lines, text.nLines, sizeof(line), StraightComparator);
 
     Error = PrintTextToFile(FileArr[1], &text);
     if (Error)
