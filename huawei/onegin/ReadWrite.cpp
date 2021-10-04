@@ -8,10 +8,11 @@ int TEXT_ReadFromFile(TEXT* text, const char* FileName)
 
     text->lines = (line *) calloc(MAX_INPUT_LINES, sizeof(line));
     while ( !text->lines )
+    {
         text->lines = ReallocLineArr(text->lines, &AllocedMemory, REDUCE);
+    }
 
     int Error = CreateBuffer(FileName, text);
-
     if (Error)
     {
         return Error;
@@ -178,7 +179,7 @@ line* ReallocLineArr (line* lines, unsigned int* AllocedMemory, int mode)
     else
         *AllocedMemory *= MULT_CONST;
 
-    lines = (line*)realloc (lines, *AllocedMemory);
+    lines = (line*)realloc(lines, *AllocedMemory);
 
     return lines;
 }

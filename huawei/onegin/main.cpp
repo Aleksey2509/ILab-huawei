@@ -8,6 +8,7 @@
 #include <assert.h>
 #include "struct.h"
 #include "compare.cpp"
+#include "sort.cpp"
 #include "ReadWrite.cpp"
 #include "Onegin.cpp"
 

@@ -16,7 +16,7 @@ int StraightComparator (const void* arg1, const void* arg2)
     int charlen1 = len1;
     int charlen2 = len2;
 
-    //printf("Comparing %s and %s\n", line1, line2);
+    //printf("Comparing %.*s and %.*s\n", len1, line1, len2, line2);
 
     for (int i = 0, j = 0; (i < len1 + 1) && (j < len2 + 1); )
     {
@@ -150,5 +150,4 @@ int VoidMemSwap (void* arg1, void* arg2, unsigned int DataSize)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-
 

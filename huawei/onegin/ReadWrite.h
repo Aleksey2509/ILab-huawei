@@ -11,7 +11,8 @@ enum ERRORCODES
 {
     NULL_FL = -1000,
     CANT_ALLOC_BUF,
-    CANT_GET_FL_INFO
+    CANT_GET_FL_INFO,
+    RESIZE_ERR
 };
 
 int TEXT_ReadFromFile(TEXT* text, const char* FileName);
