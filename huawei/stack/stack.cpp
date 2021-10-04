@@ -106,7 +106,7 @@ int StackDtor (Stack* stack)
     int Error = CheckStack(stack);
     if (Error)
     {
-        StackDump(stack, __FILE__, __LINE__, __FUNCTION__, Error);
+        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
         return 0;
     }
 
@@ -131,7 +131,7 @@ int StackPush(Stack* stack, void* src)
     int Error = CheckStack(stack);
     if (Error)
     {
-        StackDump(stack, __FILE__, __LINE__, __FUNCTION__, Error);
+        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
         return 0;
     }
     assert(src);
@@ -155,11 +155,11 @@ int StackPush(Stack* stack, void* src)
 
 int StackPop(Stack* stack, void* dst)
 {
-    StackDump(stack, __FILE__, __LINE__, __FUNCTION__);
+    StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__);
     int Error = CheckStack(stack);
     if (Error)
     {
-        StackDump(stack, __FILE__, __LINE__, __FUNCTION__, Error);
+        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
         return 0;
     }
 
@@ -189,7 +189,7 @@ int StackResize (Stack* stack, int mode)
     int Error = CheckStack(stack);
     if (Error)
     {
-        StackDump(stack, __FILE__, __LINE__, __FUNCTION__);
+        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__);
         return 0;
     }
 
@@ -348,7 +348,7 @@ ErrorCodes CheckStack (const Stack* stack) //write log file
  *   }
  * 
  * 
- * call place - __FIlE__, __LINE__ __PRETTY__FUNCTION__ or __FUNCSIG__
+ * call place - __FIlE__, __LINE__ __PRETTY__PRETTY_FUNCTION__ or __FUNCSIG__
  * 
  * do a struct source location
  * 
