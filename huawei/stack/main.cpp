@@ -6,31 +6,48 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <signal.h>
 #include "stack.cpp"
 
+int ElemDump(void* ptr)
+{
+    fprintf(logfile, "%d", *(int*)ptr);
+    return 0;
+}
 
 int main()
 {
-    Stack test;
-    int capacity = 10;
+    int a = 0, b = 0, c = 0;
 
-    StackCtor(&test, capacity);
+    Stack test = {0};
+    int capacity = 20;
+    int valArr[4] = {120, 121, 122, 123};
 
-    StackPush(&test, 5);
-    StackPush(&test, 6);
-    StackPush(&test, 7);
-    StackPush(&test, 8);
+    StackCtor(&test, capacity, 0, __FILE__, __FUNCTION__, __LINE__);
+    StackDump(&test, __FILE__, __LINE__, __FUNCTION__);
 
-    printStack(&test);
+    StackPush(&test, (void *)(valArr));
+    //StackDump(&test, __FILE__, __LINE__, __FUNCTION__);
 
-    int a = StackPop(&test);
-    int b = StackPop(&test);
-    int c = StackPop(&test);
+    StackPush(&test, (void *)(valArr + 1));
+    //StackDump(&test, __FILE__, __LINE__, __FUNCTION__);
+
+    StackPush(&test, (void *)(valArr + 2));
+    //StackDump(&test, __FILE__, __LINE__, __FUNCTION__);
+
+    StackPush(&test, (void *)(valArr + 3));
+    //StackDump(&test, __FILE__, __LINE__, __FUNCTION__);
+
+    StackPop(&test, &a);
+    StackPop(&test, &b);
+    StackPop(&test, &c);
 
     printf("a = %D, b = %D, c = %d\n", a, b, c);
 
+    //printf("left canaty ptr - %p,left counted canary ptr - %p", test.LeftCanary, test.RightCanary);
 
-    printStack(&test);
+
+    StackDump(&test, __FILE__, __LINE__, __FUNCTION__);
 
     StackDtor(&test);
 }

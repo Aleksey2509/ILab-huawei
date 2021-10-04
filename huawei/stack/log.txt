@@ -1,0 +1,195 @@
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: main, File: main.cpp line number 27 for reason: Just to check, with error 0
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackPush, File: ./stack.cpp line number 134 for reason: Just to check, with error -997
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackPush, File: ./stack.cpp line number 134 for reason: Just to check, with error -997
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackPush, File: ./stack.cpp line number 134 for reason: Just to check, with error -997
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackPush, File: ./stack.cpp line number 134 for reason: Just to check, with error -997
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackPop, File: ./stack.cpp line number 158 for reason: Just to check, with error 0
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackPop, File: ./stack.cpp line number 162 for reason: Just to check, with error -997
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackPop, File: ./stack.cpp line number 158 for reason: Just to check, with error 0
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackPop, File: ./stack.cpp line number 162 for reason: Just to check, with error -997
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackPop, File: ./stack.cpp line number 158 for reason: Just to check, with error 0
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackPop, File: ./stack.cpp line number 162 for reason: Just to check, with error -997
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: main, File: main.cpp line number 50 for reason: Just to check, with error 0
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
+Stack was created at main, at main.cpp(26)
+StackDump() Called from function: StackDtor, File: ./stack.cpp line number 109 for reason: Just to check, with error -997
+
+Stack [0x7ffedfcd7748]
+ERROR! The size of element type is 0:
+Size = 0
+capacity = 20
+Datasize = 0
+
+dataptr = 0x7f93a9c00690
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\
+
