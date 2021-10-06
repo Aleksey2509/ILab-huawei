@@ -1,22 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <assert.h>
-// add all needed includes in hpp files
-#include "struct.h"
-// bad practice
-#include "compare.cpp"
-#include "sort.cpp"
-#include "ReadWrite.cpp"
-#include "Onegin.cpp"
+#include "struct.hpp"
+#include "Onegin.hpp"
 
 int main(int argc, char* argv[]) // end to end test
 {
-    Onegin(argc - 1, argv + 1);
+    Onegin(argv[1], argv[2]);
 
     return 0;
 }

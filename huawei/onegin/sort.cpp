@@ -1,3 +1,6 @@
+#include "struct.hpp"
+#include "Compare.hpp"
+
 void Myqsort (void* base, size_t nElem, size_t elemSize, int (*comparator)(const void *, const void *))
 {
     int i = 0;

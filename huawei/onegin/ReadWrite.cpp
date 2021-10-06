@@ -1,4 +1,5 @@
-#include "ReadWrite.h"
+#include "struct.hpp"
+#include "ReadWrite.hpp"
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -10,13 +11,15 @@ int TEXT_ReadFromFile(TEXT* text, const char* FileName)
         return Error;
     }
 
-    Error = Parcer(text);
+    Error = TEXT_Parcer(text);
 
     return Error; // if everything is alright after parcer, the Error will be set to state OK = 0
 
 }
 
-int Parcer (TEXT* text)
+//------------------------------------------------------------------------------------------------------------------------------
+
+int TEXT_Parcer (TEXT* text)
 {
     unsigned int AllocedMemory = MAX_INPUT_LINES * sizeof(line_t);
 
@@ -46,37 +49,8 @@ int Parcer (TEXT* text)
         }
         
     }
-}
 
-//------------------------------------------------------------------------------------------------------------------------------
-
-int Fgets_ReadFromFile( char* Index[], const char* FileName)
-{
-    FILE* input = fopen(FileName, "r");
-
-    int nLines = 0;
-
-    char buffer[MAX_LINE_LENGTH] = { 0 };
-
-    for (nLines = 0; nLines < MAX_INPUT_LINES; nLines++)
-    {
-
-        printf("Here, i = %d\n", nLines);
-
-        if (fgets(buffer, MAX_LINE_LENGTH, input) == 0)
-            break;
-
-        Index[nLines] = strdup (buffer);
-
-        printf("Here, after getting i = %d, the line i got: %s\n", nLines, Index[nLines]);
-
-        
-    }
-
-    fclose(input);
-
-    return nLines;
-
+    return OK;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -116,64 +90,50 @@ int TEXT_CreateBuffer (const char* FileName, TEXT* text)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int PrintTextStdout(TEXT* text)
+int PrintText(const char* path, TEXT* text)
 {
-    for (int i = 0; i < text->nLines; i++)
-    {
-        PrintLineToFile(text->lines + i, stdout);
-    }
-    return 0;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------
-
-int PrintTextToFile (char* path, TEXT* text)
-{
-
-	assert(path != NULL);
-	assert(text != NULL);
+    if (!text)
+        return NULL_TEXT_PTR;
+    if (!text->lines)
+        return NULL_TEXT_PTR;
+    if (!path)
+        return NULL_FL;
 
     FILE* file = fopen(path, "w");
     if ( file == NULL)
         return NULL_FL;
 
-	for(int i = 0; i < text->nLines; i++)
-	{
-		PrintLineToFile(text->lines + i, file);
-	}
+    for (int i = 0; i < text->nLines; i++)
+    {
+        fwrite(text->lines[i].line, sizeof(char), text->lines[i].lineLen, file);
+        fwrite("\n", sizeof(char), 1, file);
+    }
+
     fclose(file);
 
-    return 0;
-
-}
-//------------------------------------------------------------------------------------------------------------------------------
-
-int PrintLineToFile(const line_t* str, FILE* stream)
-{
-    fwrite(str->line, sizeof(char), str->lineLen, stream);
-    fwrite("\n", sizeof(char), 1, stream);
-
-    return 0;
+    return OK;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int PrintError (int Error) // strerror?
+const char* PrintError (int Error) // strerror?
 {
     switch (Error)
         {
-            case CANT_ALLOC_BUF: printf("Your file is too big\n");
-                                break;
-            case NULL_FL: printf("Bad file pointer\n");
-                          break;
-            case NULL_TEXT_PTR: printf("Null text ptr\n");
-                          break;
-            case NOT_ENGH_MEM: printf("Not enough memory for line memory allocation\n");
-                          break;
-            case CANT_GET_FL_INFO: printf("Could not get file info\n");
-                                   break;
+            case OK:               return ErrStrPtr[1];
+
+            case CANT_ALLOC_BUF:   return ErrStrPtr[2];
+
+            case NULL_FL:          return ErrStrPtr[3];
+
+            case NULL_TEXT_PTR:    return ErrStrPtr[4];
+
+            case NOT_ENGH_MEM:     return ErrStrPtr[5];
+
+            case CANT_GET_FL_INFO: return ErrStrPtr[6];
+
+            default:               return ErrStrPtr[0];
         }
-    return 0;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -207,6 +167,89 @@ int TEXT_Destroy (TEXT* text)
 
     text->buffer = NULL;
     text->lines = NULL;
+
+    return 0;
+}
+
+
+
+
+//---------------------------------                     old functions section                     ------------------------------
+
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+int Fgets_ReadFromFile( char* Index[], const char* FileName)
+{
+    FILE* input = fopen(FileName, "r");
+
+    int nLines = 0;
+
+    char buffer[MAX_LINE_LENGTH] = { 0 };
+
+    for (nLines = 0; nLines < MAX_INPUT_LINES; nLines++)
+    {
+
+        printf("Here, i = %d\n", nLines);
+
+        if (fgets(buffer, MAX_LINE_LENGTH, input) == 0)
+            break;
+
+        Index[nLines] = strdup (buffer);
+
+        printf("Here, after getting i = %d, the line i got: %s\n", nLines, Index[nLines]);
+
+        
+    }
+
+    fclose(input);
+
+    return nLines;
+
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+int PrintTextStdout(TEXT* text)
+{
+    for (int i = 0; i < text->nLines; i++)
+    {
+        PrintLineToFile(text->lines + i, stdout);
+    }
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+int PrintTextToFile (char* path, TEXT* text)
+{
+
+	if (!text)
+        return NULL_TEXT_PTR;
+    if (!text->lines)
+        return NULL_TEXT_PTR;
+    if (!path)
+        return NULL_FL;
+
+    FILE* file = fopen(path, "w");
+    if ( file == NULL)
+        return NULL_FL;
+
+	for(int i = 0; i < text->nLines; i++)
+	{
+		PrintLineToFile(text->lines + i, file);
+	}
+    fclose(file);
+
+    return 0;
+
+}
+//------------------------------------------------------------------------------------------------------------------------------
+
+int PrintLineToFile(const line_t* str, FILE* stream)
+{
+    fwrite(str->line, sizeof(char), str->lineLen, stream);
+    fwrite("\n", sizeof(char), 1, stream);
 
     return 0;
 }

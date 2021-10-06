@@ -1,0 +1,1 @@
+int Onegin (const char* FileFrom, const char* FileTo);

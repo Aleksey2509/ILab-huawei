@@ -1,14 +1,14 @@
-int Onegin (int FileCount, char* FileArr[]) // in name & out name? + const for ptrs
+#include "struct.hpp"
+#include "ReadWrite.hpp"
+#include "Compare.hpp"
+#include "sort.hpp"
+
+
+int Onegin (const char* FileFrom, const char* FileTo)
 {
     TEXT text {};
 
-    if (FileCount < 2)
-    {
-        printf("You did not specify name of the input or the output file\n");
-        return 1;
-    }
-
-    int Error = TEXT_ReadFromFile(&text, FileArr[0]);
+    int Error = TEXT_ReadFromFile(&text, FileFrom);
     if (Error)
     {
         PrintError(Error);
@@ -16,10 +16,10 @@ int Onegin (int FileCount, char* FileArr[]) // in name & out name? + const for p
         return Error;
     }
 
-    //qsort(text.lines, text.nLines, sizeof(line_t), ReverseComparator);
+    qsort(text.lines, text.nLines, sizeof(line_t), StraightComparator);
     Myqsort(text.lines, text.nLines, sizeof(line_t), ReverseComparator);
 
-    Error = PrintTextToFile(FileArr[1], &text);
+    Error = PrintText(FileTo, &text);
     if (Error)
     {
         PrintError(Error);
