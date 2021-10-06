@@ -4,18 +4,26 @@
 
 int TEXT_ReadFromFile(TEXT* text, const char* FileName)
 {
-    unsigned int AllocedMemory = MAX_INPUT_LINES * sizeof(line);
-
-    text->lines = (line *) calloc(MAX_INPUT_LINES, sizeof(line));
-    while ( !text->lines )
-    {
-        text->lines = ReallocLineArr(text->lines, &AllocedMemory, REDUCE);
-    }
-
-    int Error = CreateBuffer(FileName, text);
+    int Error = TEXT_CreateBuffer(FileName, text);
     if (Error)
     {
         return Error;
+    }
+
+    Error = Parcer(text);
+
+    return Error; // if everything is alright after parcer, the Error will be set to state OK = 0
+
+}
+
+int Parcer (TEXT* text)
+{
+    unsigned int AllocedMemory = MAX_INPUT_LINES * sizeof(line_t);
+
+    text->lines = (line_t *) calloc(MAX_INPUT_LINES, sizeof(line_t));
+    if ( !text->lines )
+    {
+        return NOT_ENGH_MEM;
     }
 
     for (int i = 0; i < text->buffSize ;i++)
@@ -30,13 +38,14 @@ int TEXT_ReadFromFile(TEXT* text, const char* FileName)
         i += text->lines[text->nLines].lineLen;
         text->nLines++;
 
-        if (text->nLines > (AllocedMemory / sizeof(line)))
-            text->lines = ReallocLineArr(text->lines, &AllocedMemory, ENLARGE);
+        if (text->nLines > (AllocedMemory / sizeof(line_t)))
+        {
+            text->lines = ReallocLineArr(text->lines, &AllocedMemory);
+            if (!text->lines)
+                return NOT_ENGH_MEM;
+        }
         
     }
-
-    return 0;
-
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -72,19 +81,21 @@ int Fgets_ReadFromFile( char* Index[], const char* FileName)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int CreateBuffer (const char* FileName, TEXT* text)
+int TEXT_CreateBuffer (const char* FileName, TEXT* text)
 {
-    assert (FileName);
-    assert(text);
+    if (!FileName)
+        return NULL_FL;
+    if (!text)
+        return NULL_TEXT_PTR;
 
     struct stat FileInfo;
     int stat_flag = stat(FileName, &FileInfo);
     if (stat_flag == -1)
     {
-        return (CANT_GET_FL_INFO);
+        return CANT_GET_FL_INFO;
     }
 
-    long long size = FileInfo.st_size;
+    off_t size = FileInfo.st_size;
     text->buffer = (char*)calloc(size, sizeof(char));
 
     if ( text->buffer == NULL)
@@ -92,7 +103,10 @@ int CreateBuffer (const char* FileName, TEXT* text)
 
     FILE* input = fopen(FileName, "r");
     if ( input == NULL)
+    {
+        free(text->buffer);
         return NULL_FL;
+    }
 
     text->buffSize = fread(text->buffer, sizeof(char), FileInfo.st_size, input);
     fclose(input);
@@ -134,7 +148,7 @@ int PrintTextToFile (char* path, TEXT* text)
 }
 //------------------------------------------------------------------------------------------------------------------------------
 
-int PrintLineToFile(const line* str, FILE* stream)
+int PrintLineToFile(const line_t* str, FILE* stream)
 {
     fwrite(str->line, sizeof(char), str->lineLen, stream);
     fwrite("\n", sizeof(char), 1, stream);
@@ -144,13 +158,17 @@ int PrintLineToFile(const line* str, FILE* stream)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int PrintError (int Error)
+int PrintError (int Error) // strerror?
 {
     switch (Error)
         {
             case CANT_ALLOC_BUF: printf("Your file is too big\n");
                                 break;
-            case NULL_FL: printf("Could not open file\n");
+            case NULL_FL: printf("Bad file pointer\n");
+                          break;
+            case NULL_TEXT_PTR: printf("Null text ptr\n");
+                          break;
+            case NOT_ENGH_MEM: printf("Not enough memory for line memory allocation\n");
                           break;
             case CANT_GET_FL_INFO: printf("Could not get file info\n");
                                    break;
@@ -163,35 +181,32 @@ int PrintError (int Error)
 size_t mystrlen(const char* string)
 {
     size_t len = 0;
-    for (len = 0; (*string != '\n') && (*string != '\0') ; len++)
-        string++;
-    return (len);
+    for (len = 0; (string[len] != '\n') && (string[len] != '\0') ; len++)
+    ;
+    return len;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-line* ReallocLineArr (line* lines, unsigned int* AllocedMemory, int mode)
+line_t* ReallocLineArr (line_t* lines, unsigned int* AllocedMemory)
 {
-    assert((mode == REDUCE) || (mode == ENLARGE));
-    
-    if (mode == REDUCE)
-        *AllocedMemory /= MULT_CONST;
-    else
-        *AllocedMemory *= MULT_CONST;
-
-    lines = (line*)realloc(lines, *AllocedMemory);
+    *AllocedMemory *= MULT_CONST;
+    lines = (line_t*)realloc(lines, *AllocedMemory);
 
     return lines;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int Destroy (TEXT* text)
+int TEXT_Destroy (TEXT* text)
 {
     if (text->buffer != NULL)
         free(text->buffer);
     if (text->lines != NULL)
         free(text->lines);
+
+    text->buffer = NULL;
+    text->lines = NULL;
 
     return 0;
 }

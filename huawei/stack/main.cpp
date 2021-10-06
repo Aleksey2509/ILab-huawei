@@ -23,7 +23,7 @@ int main()
     int capacity = 20;
     int valArr[4] = {120, 121, 122, 123};
 
-    StackCtor(&test, capacity, 0, __FILE__, __PRETTY_FUNCTION__, __LINE__);
+    StackCtor(&test, capacity, sizeof(int));
     StackDump(&test, __FILE__, __LINE__, __PRETTY_FUNCTION__);
 
     StackPush(&test, (void *)(valArr));
@@ -45,7 +45,6 @@ int main()
     printf("a = %D, b = %D, c = %d\n", a, b, c);
 
     //printf("left canaty ptr - %p,left counted canary ptr - %p", test.LeftCanary, test.RightCanary);
-
 
     StackDump(&test, __FILE__, __LINE__, __PRETTY_FUNCTION__);
 

@@ -1,14 +1,13 @@
-struct line // line_t
+struct line_t // init values + line_t
 {
-    char* line;
-    int lineLen;
+    char* line = 0;
+    int lineLen = 0;
 };
 
-struct TEXT // consts for poisoned init values
+struct TEXT // init values + consts for poisoned init values
 {
-    char* buffer;
-    long long buffSize;
-    line* lines;
-    int nLines;
+    char* buffer = 0;
+    long long buffSize = 0;
+    line_t* lines = 0;
+    int nLines = 0;
 };
-
