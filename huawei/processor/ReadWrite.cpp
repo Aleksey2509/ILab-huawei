@@ -90,21 +90,9 @@ int TEXT_CreateBuffer (const char* FileName, TEXT* text)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int PrintTextStdout(TEXT* text)
+int PrintText(const char* path, TEXT* text)
 {
-    for (int i = 0; i < text->nLines; i++)
-    {
-        PrintLineToFile(text->lines + i, stdout);
-    }
-    return 0;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------
-
-int PrintTextToFile (const char* path, const TEXT* text)
-{
-
-	if (!text)
+    if (!text)
         return NULL_TEXT_PTR;
     if (!text->lines)
         return NULL_TEXT_PTR;
@@ -115,28 +103,20 @@ int PrintTextToFile (const char* path, const TEXT* text)
     if ( file == NULL)
         return NULL_FL;
 
-	for(int i = 0; i < text->nLines; i++)
-	{
-		PrintLineToFile(text->lines + i, file);
-	}
+    for (int i = 0; i < text->nLines; i++)
+    {
+        fwrite(text->lines[i].line, sizeof(char), text->lines[i].lineLen, file);
+        fwrite("\n", sizeof(char), 1, file);
+    }
+
     fclose(file);
 
-    return 0;
-
-}
-//------------------------------------------------------------------------------------------------------------------------------
-
-int PrintLineToFile(const line_t* str, FILE* stream)
-{
-    fwrite(str->line, sizeof(char), str->lineLen, stream);
-    fwrite("\n", sizeof(char), 1, stream);
-
-    return 0;
+    return OK;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-const char* TEXT_GetError (int Error) // strerror?
+const char* GetError (int Error) // strerror?
 {
     switch (Error)
         {
@@ -191,3 +171,85 @@ int TEXT_Destroy (TEXT* text)
     return 0;
 }
 
+
+
+
+//---------------------------------                     old functions section                     ------------------------------
+
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+int Fgets_ReadFromFile( char* Index[], const char* FileName)
+{
+    FILE* input = fopen(FileName, "r");
+
+    int nLines = 0;
+
+    char buffer[MAX_LINE_LENGTH] = { 0 };
+
+    for (nLines = 0; nLines < MAX_INPUT_LINES; nLines++)
+    {
+
+        printf("Here, i = %d\n", nLines);
+
+        if (fgets(buffer, MAX_LINE_LENGTH, input) == 0)
+            break;
+
+        Index[nLines] = strdup (buffer);
+
+        printf("Here, after getting i = %d, the line i got: %s\n", nLines, Index[nLines]);
+
+        
+    }
+
+    fclose(input);
+
+    return nLines;
+
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+int PrintTextStdout(TEXT* text)
+{
+    for (int i = 0; i < text->nLines; i++)
+    {
+        PrintLineToFile(text->lines + i, stdout);
+    }
+    return 0;
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+int PrintTextToFile (char* path, TEXT* text)
+{
+
+	if (!text)
+        return NULL_TEXT_PTR;
+    if (!text->lines)
+        return NULL_TEXT_PTR;
+    if (!path)
+        return NULL_FL;
+
+    FILE* file = fopen(path, "w");
+    if ( file == NULL)
+        return NULL_FL;
+
+	for(int i = 0; i < text->nLines; i++)
+	{
+		PrintLineToFile(text->lines + i, file);
+	}
+    fclose(file);
+
+    return 0;
+
+}
+//------------------------------------------------------------------------------------------------------------------------------
+
+int PrintLineToFile(const line_t* str, FILE* stream)
+{
+    fwrite(str->line, sizeof(char), str->lineLen, stream);
+    fwrite("\n", sizeof(char), 1, stream);
+
+    return 0;
+}

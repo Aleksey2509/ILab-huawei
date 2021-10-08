@@ -1,23 +1,25 @@
-CC = g++
-CFLAGS = -std=c++11
-OBJ = ReadWrite.o Compare.o sort.o Onegin.o main.o
+CXX = g++
+CPPFLAGS = -std=c++11
+OBJL = objfiles
+OBJ = $(OBJL)/ReadWrite.o $(OBJL)/Compare.o $(OBJL)/sort.o $(OBJL)/Onegin.o $(OBJL)/main.o
 
-all: main
+$(OBJL)/%.o: %.cpp 
+	$(CXX) $(CPPFLAGS) -c -o $@ $^
 
-main: $(OBJ)
-	$(CC) $(CFLAGS) -o main $(OBJ)
+all: compile
 
-ReadWrite.o: ReadWrite.cpp struct.hpp ReadWrite.hpp
-	$(CC) $(CFLAGS) -c -o ReadWrite.o ReadWrite.cpp
+compile: $(OBJ)
+	$(CXX) $(CPPFLAGS) -o main $(OBJ)
 
-Compare.o: Compare.cpp struct.hpp Compare.hpp
-	$(CC) $(CFLAGS) -c -o Compare.o Compare.cpp
+test:
+	./main input.txt out
 
-sort.o: sort.cpp struct.hpp Compare.hpp
-	$(CC) $(CFLAGS) -c -o sort.o sort.cpp
+$(OBJL)/ReadWrite.o: ReadWrite.cpp
 
-Onegin.o: Onegin.cpp struct.hpp ReadWrite.hpp Compare.hpp sort.hpp
-	$(CC) $(CFLAGS) -c -o Onegin.o Onegin.cpp
+$(OBJL)/Compare.o: Compare.cpp
 
-main.o: main.cpp struct.hpp ReadWrite.hpp Compare.hpp sort.hpp Onegin.hpp
-	$(CC) $(CFLAGS) -c -o main.o main.cpp
+$(OBJL)/sort.o: sort.cpp
+
+$(OBJL)/Onegin.o: Onegin.cpp
+
+$(OBJL)/main.o: main.cpp

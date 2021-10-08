@@ -1,0 +1,40 @@
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
+
+Stack was created at int main(int, char **), at proc.cpp(61)
+StackDump() Called from function: void dmp(Stack *), File: proc.cpp line number 356 for reason: Just to check, with error 0
+
+Stack [0x7ffeec215308]
+Canaries around data: Left Canary - BAD00BAD, RightCanary - BAD00BAD
+
+Canaries around stack: Left Canary - DED00DED, RightCanary - DED00DED
+
+Size = 2
+capacity = 20
+Datasize = 4
+
+dataptr = 0x7fd9d2402bb8
+data[0]: 5
+data[1]: 4
+
+//**\\//**\\//**\\//**\\//**\\//**\\//**\\///**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\///**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
+
+Stack was created at int main(int, char **), at proc.cpp(61)
+StackDump() Called from function: void dmp(Stack *), File: proc.cpp line number 356 for reason: Just to check, with error 0
+
+Stack [0x7ffeec215308]
+Canaries around data: Left Canary - BAD00BAD, RightCanary - BAD00BAD
+
+Canaries around stack: Left Canary - DED00DED, RightCanary - DED00DED
+
+Size = 1
+capacity = 5
+Datasize = 4
+
+dataptr = 0x7fd9d2402bb8
+data[0]: 9
+
+//**\\//**\\//**\\//**\\//**\\//**\\//**\\///**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\///**\\//**\\//**\\//**\\//**\\//**\\//**\\//**\\
+
+9
