@@ -1,4 +1,5 @@
-#include "compare.h"
+#include "struct.hpp"
+#include "Compare.hpp"
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -33,9 +34,9 @@ int StraightComparator (const void* arg1, const void* arg2)
 
         //printf("charlen of %s = %d, charlen of %s = %d\n", line1, charlen1, line2, charlen2);
 
-        if ( (line1[i] == '\0') || (line2[j] == '\0') ) // cmp fail
+        if ( (line1[i] == '\0') || (line2[j] == '\0') )
         {
-            return (IntComparator(charlen1, charlen2)); // int1 - int2
+            return (charlen1 - charlen2);
         }
 
         //printf("\nline1 - %c, line2 - %c\n", line1[i], line2[i]);
@@ -82,10 +83,10 @@ int ReverseComparator (const void* arg1, const void* arg2)
 
         //printf("charlen of %s = %d, charlen of %s = %d\n", line1, charlen1, line2, charlen2);
 
-        if ( (i < 0) || (j < 0) ) // same as in direct cmp
+        if ( (i < 0) || (j < 0) )
         {
             //printf("charlen1 = %d, charlen2 = %D\n", charlen1, charlen2);
-            return (IntComparator(charlen1, charlen2));
+            return (charlen1 - charlen2);
         }
 
         //printf("\nline1 - %c, line2 - %c\n", line1[i], line2[i]);
@@ -99,53 +100,34 @@ int ReverseComparator (const void* arg1, const void* arg2)
     return 0;
 }
 
+
 //------------------------------------------------------------------------------------------------------------------------------
 
-int CharComparator (char a, char b) // case insensetive char cmp?
+int CharComparator (char a, char b)
 {
     a = tolower(a);
     b = tolower(b);
 
-    if (a > b) // return a-b?
-        return 1;
-        else if (a < b)
-                return -1;
-
-    return 0;
+    return a - b;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int IntComparator (int a, int b)
-{
-    if (a < b) // same
-        return -1;
-    else
-        return 1;
-}
-//------------------------------------------------------------------------------------------------------------------------------
-
-int LineSwap (line_t* line1Ptr, line_t* line2Ptr)
+void LineSwap (line_t* line1Ptr, line_t* line2Ptr)
 {
     line_t tmp = *line1Ptr;
     *line1Ptr = *line2Ptr;
     *line2Ptr = tmp;
-
-    return 0; // void?
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int VoidMemSwap (void* arg1, void* arg2, unsigned int DataSize)
+void VoidMemSwap (void* arg1, void* arg2, unsigned int DataSize)
 {
-    void* tmp = calloc(1, DataSize); // unefficient
-    tmp = memcpy(tmp, arg1, DataSize);
-    arg1 = memcpy(arg1, arg2, DataSize);
-    arg2 = memcpy(arg2, tmp, DataSize);
-    free (tmp);
-
-    return 0;
+    char tmp[BUFSIZ] = { 0 };
+    memcpy(tmp, arg1, DataSize);
+    memcpy(arg1, arg2, DataSize);
+    memcpy(arg2, tmp, DataSize);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
-

@@ -11,18 +11,18 @@ int Onegin (const char* FileFrom, const char* FileTo)
     int Error = TEXT_ReadFromFile(&text, FileFrom);
     if (Error)
     {
-        PrintError(Error);
+        printf("%s\n", TEXT_GetError(Error));
         TEXT_Destroy(&text);
         return Error;
     }
 
-    qsort(text.lines, text.nLines, sizeof(line_t), StraightComparator);
+    //qsort(text.lines, text.nLines, sizeof(line_t), StraightComparator);
     Myqsort(text.lines, text.nLines, sizeof(line_t), ReverseComparator);
 
-    Error = PrintText(FileTo, &text);
+    Error = PrintTextToFile(FileTo, &text);
     if (Error)
     {
-        PrintError(Error);
+        printf("%s\n", TEXT_GetError(Error));
         TEXT_Destroy(&text);
         return Error;
     }
