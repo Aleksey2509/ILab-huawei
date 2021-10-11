@@ -1,5 +1,10 @@
 #include "stack.hpp"
 
+//------------------------------------------------------------------------------------------------------------------------------
+
+
+#if HASH_DEF
+
 unsigned long Hash( const void* key, size_t len, unsigned long prime)
 {
     unsigned long hash = (unsigned long) len;
@@ -9,6 +14,34 @@ unsigned long Hash( const void* key, size_t len, unsigned long prime)
 
     return (hash % prime);
 }
+
+hash_t GetStackHash (const Stack* stack)
+{
+    size_t byteLen = sizeof(Stack) - 2 * sizeof(hash_t);
+    #if CNRY_DEF
+    {
+        byteLen -= 2 * sizeof(canary_t);
+    }
+    #endif
+
+    hash_t StackHash = Hash(stack, byteLen, prime);
+
+    return StackHash;
+}
+
+hash_t GetDataHash (const Stack* stack)
+{
+    size_t byteLen = stack->size * stack->DataSize;
+    hash_t DataHash = Hash(stack, byteLen, prime);
+
+    return DataHash;
+}
+
+#endif
+
+
+
+//------------------------------------------------------------------------------------------------------------------------------
 
 FILE* logfile = fopen("log.txt", "w");
 
@@ -53,7 +86,7 @@ int StackCreator (Stack* stack, unsigned long capacity, unsigned long DataSize, 
     #if HASH_DEF
     {
         stack->StackHash = GetStackHash(stack);
-        stack->DataHash = GetDataHash(stack);
+        stack->DataHash  = GetDataHash(stack);
     }
     #endif
 
@@ -61,27 +94,7 @@ int StackCreator (Stack* stack, unsigned long capacity, unsigned long DataSize, 
     return 0;
 }
 
-hash_t GetStackHash (const Stack* stack)
-{
-    size_t byteLen = sizeof(Stack) - 2 * sizeof(hash_t);
-    #if CNRY_DEF
-    {
-        byteLen -= 2 * sizeof(canary_t);
-    }
-    #endif
 
-    hash_t StackHash = Hash(stack, byteLen, prime);
-
-    return StackHash;
-}
-
-hash_t GetDataHash (const Stack* stack)
-{
-    size_t byteLen = stack->size * stack->DataSize;
-    hash_t DataHash = Hash(stack, byteLen, prime);
-
-    return DataHash;
-}
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -128,6 +141,11 @@ int StackPush(Stack* stack, void* src)
 
     stack->size++;
 
+    #if HASH_DEF
+    stack->StackHash = GetStackHash(stack);
+    stack->DataHash  = GetDataHash(stack);
+    #endif
+
     return 0;
 }
 
@@ -158,6 +176,11 @@ int StackPop(Stack* stack, void* dst)
     memcpy(dst, (void*)( (char*)stack->data + stack->DataSize * (stack->size - 1) ), stack->DataSize);
 
     stack->size--;
+
+    #if HASH_DEF
+    stack->StackHash = GetStackHash(stack);
+    stack->DataHash  = GetDataHash(stack);
+    #endif
 
     return 0;
 
@@ -208,11 +231,11 @@ int StackResize (Stack* stack, int mode)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int StackDump (const Stack* stack, const char* FileName, int LineNum, const char* FuncName, int Error, const char reason[]) // Read about macros
+int StackDump (const Stack* stack, const char* FileName, int LineNum, const char* FuncName, int Error, const char reason[])
 {
     fprintf(logfile, "%s%s\n\n", UpperBorder, UpperBorder);
 
-    fprintf(logfile, "Stack was created at %s, at %s(%d)\n", stack->CreateFunc, stack->CreateFile, stack->CreateLine);
+    fprintf(logfile, "Stack was created at %s, at %s(%lu)\n", stack->CreateFunc, stack->CreateFile, stack->CreateLine);
     fprintf(logfile, "StackDump() Called from function: %s, File: %s line number %D for reason: %s, with error %d\n\n",FuncName, FileName, LineNum, reason, Error);
     
     if (!Error)
@@ -275,14 +298,14 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     {
         if (Error == DATA_CANARY_DMG)
         {
-            fprintf(logfile, "ERROR!!! THE CANARIES AROUND DATA WERE DAMAGED:\nExpected values:\nLeft Canary - %X, RightCanary - %X;\ngot:\n", DATA_CANARY_VAL, DATA_CANARY_VAL);
+            fprintf(logfile, "ERROR!!! THE CANARIES AROUND DATA WERE DAMAGED:\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", DATA_CANARY_VAL, DATA_CANARY_VAL);
         }
         fprintf(logfile, "Canaries around data: Left Canary - %lX, RightCanary - %lX\n\n", ((canary_t*)stack->data)[-1], 
                                                     *(canary_t*)((char*)stack->data + stack->capacity * stack->DataSize) );
 
         if (Error == STK_CANARY_DMG)
         {
-            fprintf(logfile, "ERROR!!! THE CANARIES WERE AROUND STACK STRUCT WERE DAMAGED:\nExpected values:\nLeft Canary - %X, RightCanary - %X;\ngot:\n", STK_CANARY_VAL, STK_CANARY_VAL);
+            fprintf(logfile, "ERROR!!! THE CANARIES WERE AROUND STACK STRUCT WERE DAMAGED:\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", STK_CANARY_VAL, STK_CANARY_VAL);
         }
         fprintf(logfile, "Canaries around stack: Left Canary - %lX, RightCanary - %lX\n\n", stack->LeftCanary, stack->RightCanary);
     }
@@ -316,7 +339,7 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-ErrorCodes CheckStack (const Stack* stack) //write log file
+ErrorCodes CheckStack (const Stack* stack)
 {
     if (stack == 0)
     return NULL_STK_PTR;

@@ -8,7 +8,6 @@
 #include <ctype.h>
 #include <signal.h>
 #include "config.h"
-#include "hash.hpp"
 
 char UpperBorder[] = "//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\";
 char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\///**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\";
@@ -20,7 +19,7 @@ char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\
     if(Error)\
     {\
         StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);\
-        return 0;\
+        return Error;\
     }\
 }
 
@@ -86,8 +85,10 @@ struct Stack // add debug mode in stack
     #endif
 
     #if HASH_DEF
-    hash_t DataHash;
-    hash_t StackHash;
+        hash_t DataHash;
+    #endif
+    #if HASH_DEF
+        hash_t StackHash;
     #endif
 };
 
