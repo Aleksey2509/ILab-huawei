@@ -1,11 +1,6 @@
 static const int MAX_INPUT_LINES = 10000;
 static const int MAX_LINE_LENGTH = 4096;
 
-static const int REDUCE  = -5;
-static const int ENLARGE = -4; 
-
-static const int MULT_CONST = 2;
-
 enum ERROR_CODES
 {
     NULL_FL = -1000,

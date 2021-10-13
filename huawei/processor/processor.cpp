@@ -10,7 +10,8 @@
         StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);\
 }
 
-int process (Stack* stack, const int* CodeBuf);
+int process (Stack* stack, const char* CodeBuf);
+int CreateBuffer(const char* FileName, char** Buffer);
 
 int push(Stack* stack, int a);
 int pop(Stack* stack);
@@ -21,7 +22,6 @@ int div(Stack* stack);
 void out(Stack* stack);
 int ver(Stack* stack);
 void dmp(Stack* stack);
-int hlt();
 
 
 
@@ -29,15 +29,20 @@ int main(int argc, char* argv[])
 {
     Stack stack {};
 
-    struct stat FileInfo;
-    int stat_flag = stat(argv[1], &FileInfo);
-    off_t size = FileInfo.st_size;
-    int* CodeBuf = (int* )calloc(size, sizeof(int));
+    char* CodeBuf;
+    int Error = CreateBuffer(argv[1], &CodeBuf);
+    if (Error)
+    {
+        printf("%s\n", GetError(Error));
+        return 0;
+    }
 
-    FILE* input = fopen(argv[1], "rb");
-    size_t buffSize = fread(CodeBuf, sizeof(int), size, input);
+    // for (int i = 0; i < 10; i++)
+    // {
+    //     printf("%d ", CodeBuf[i]);
+    // }
 
-    int Error = StackCtor(&stack, 20);
+    Error = StackCtor(&stack, 20);
     if(Error)
     {
         StackDump(&stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
@@ -52,24 +57,18 @@ int main(int argc, char* argv[])
 
 
 
-int process (Stack* stack, const int* CodeBuf)
+int process (Stack* stack, const char* CodeBuf)
 {
     int Error = 0;
     int ip = 0;
 
-    // printf("printing codebuf\n");
-    // for (int i = 0; i < 20; i++)
-    // {
-    //     printf("%d ", CodeBuf[i]);
-    // }
-    // printf("\n");
-
     while(1)
     {
+        //printf("\n\nin cycle: Codebuf[%d] = %d\n\n", ip, CodeBuf[ip]);
         switch(CodeBuf[ip])
         {
-            case CMD_PUSH: push(stack, CodeBuf[ip + 1]);
-                        ip += 2;
+            case CMD_PUSH: push(stack, *(int*)(CodeBuf + ip + 1));
+                        ip += sizeof(char) + sizeof(int);
                         break;
 
             case CMD_POP: pop(stack);
@@ -106,14 +105,52 @@ int process (Stack* stack, const int* CodeBuf)
 
             case CMD_HLT: return 0;
 
-            default: printf("\n\nUnknown code for command; dumping and stoppong working\n\n");
-                    dmp(stack);
-                    return 1;
+            default: printf("\n\nUnknown code for command; dumping and stopping working\n\n");
+                     dmp(stack);
+                     return 1;
         }
     }
 
     return 1;
 
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+int CreateBuffer(const char* FileName, char** Buffer)
+{
+    if (!FileName)
+        return NULL_FL;
+
+    struct stat FileInfo;
+    int stat_flag = stat(FileName, &FileInfo);
+    if (stat_flag == -1)
+    {
+        return CANT_GET_FL_INFO;
+    }
+
+    off_t size = FileInfo.st_size;
+    *Buffer = (char* )calloc(size, sizeof(char));
+    //printf("in crtbuf: bufptr: %p\n", Buffer);
+
+    if ( (*Buffer) == NULL)
+        return CANT_ALLOC_BUF;
+
+    FILE* input = fopen(FileName, "rb");
+    if ( input == NULL)
+    {
+        free(*Buffer);
+        return NULL_FL;
+    }
+
+    size_t buffsize = fread(*Buffer, sizeof(char), size, input);
+    // for (int i = 0; i < buffsize; i++)
+    // {
+    //     printf("%d ", (*Buffer)[i]);
+    // }
+    fclose(input);
+
+    return OK;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -268,7 +305,7 @@ int div(Stack* stack)
 
 void out(Stack* stack)
 {
-    ElemDump(stack->data + stack->size - 1);
+    printf("%d\n", stack->data[stack->size - 1]);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------

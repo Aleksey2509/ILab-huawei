@@ -16,11 +16,17 @@ proc: $(OBJ) $(OBJL)/processor.o
 assembler: $(OBJ) $(OBJL)/assembler.o
 	$(CXX) $(CPPFLAGS) -o assembler  $(OBJ) $(OBJL)/assembler.o
 
+disassembler: $(OBJ) $(OBJL)/disassembler.o
+	$(CXX) $(CPPFLAGS) -o disassembler  $(OBJ) $(OBJL)/disassembler.o
+
 test_proc:
 	./proc code.txt
 
 test_asm:
 	./assembler instructs
+
+test_disasm:
+	./disassembler code.txt
 
 $(OBJL)/ReadWrite.o: ReadWrite.cpp
 
