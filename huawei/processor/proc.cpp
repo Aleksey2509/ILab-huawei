@@ -15,7 +15,7 @@ int process (Stack* stack, const char* cmd, int val);
 int processor (Stack* stack, char** CmdArr);
 
 int push(Stack* stack, int a);
-int pop(Stack* stack,int* a);
+int pop(Stack* stack);
 int add(Stack* stack);
 int sub(Stack* stack);
 int mul(Stack* stack);
@@ -24,20 +24,6 @@ void out(Stack* stack);
 int ver(Stack* stack);
 void dmp(Stack* stack);
 int hlt();
-
-// char CmdArr[][5] = {"push",
-//                     "pop",
-//                     "add",
-//                     "sub",
-//                     "mul",
-//                     "div",
-//                     "out",
-//                     "ver", 
-//                     "dmp",
-//                     "hlt" };
-
-//int CmdCount = sizeof(CmdArr) / sizeof(CmdArr[0]);
-
 
 int main(int argc, char* argv[])
 {
@@ -58,14 +44,13 @@ int main(int argc, char* argv[])
         CmdArr[i] = text.lines[i].line;
     }
 
-    Error = StackCtor(&stack, 20, sizeof(int));
+    Error = StackCtor(&stack, 20);
     if(Error)
     {
         StackDump(&stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
         return 0;
     }
 
-    //processor(&stack, CmdArr);
     char cmdbuffer [1000] = { 0 };
     int num = 0;
     for (int i = 0; i < text.nLines; i++)
@@ -82,7 +67,6 @@ int main(int argc, char* argv[])
 int process (Stack* stack, const char* cmd, int val)
 {
     int Error = 0;
-    int tmp;
 
         if(strcmp(cmd, "push") == 0)
         {
@@ -92,7 +76,7 @@ int process (Stack* stack, const char* cmd, int val)
 
         if(strcmp(cmd, "pop") == 0)
         {
-            Error = pop(stack, &tmp);
+            Error = pop(stack);
             return Error;
         }
 
@@ -147,9 +131,9 @@ int push(Stack* stack, int a)
     return Error;
 }
 
-int pop(Stack* stack,int* a)
+int pop(Stack* stack)
 {
-    int Error = StackPop(stack, a);
+    int Error = StackPop(stack);
     
     return Error;
 }
@@ -202,7 +186,7 @@ int sub(Stack* stack)
         return Error;
     }
 
-    int result = a - b;
+    int result = b - a;
 
     Error = StackPush(stack, &result);
     if (Error)
@@ -291,73 +275,3 @@ void dmp(Stack* stack)
     StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__);
 }
 
-
-
-
-
-int processor (Stack* stack, char** CmdArr)
-{
-    int Error = 0;
-    int tmp = 0;
-    int num = 0;
-
-    char cmdbuffer [1000] = { 0 };
-
-    for (int i = 0; ;i++)
-    {
-        sscanf (CmdArr[i], "%s %d", cmdbuffer, &num);
-        if(strcmp(cmdbuffer, "push") == 0)
-        {
-            Error = push(stack, num);
-            ErrorToLog(Error);
-        }
-
-        if(strcmp(cmdbuffer, "pop") == 0)
-        {
-            Error = pop(stack, &tmp);
-            ErrorToLog(Error);
-        }
-
-        if(strcmp(cmdbuffer, "add") == 0)
-        {
-            Error = add(stack);
-            ErrorToLog(Error);
-        }
-
-        if(strcmp(cmdbuffer, "sub") == 0)
-        {
-            Error = sub(stack);
-            ErrorToLog(Error);
-        }
-
-        if(strcmp(cmdbuffer, "mul") == 0)
-        {
-            Error = mul(stack);
-            ErrorToLog(Error);
-        }
-
-        if(strcmp(cmdbuffer, "out") == 0)
-        {
-            out(stack);
-        }
-
-        if(strcmp(cmdbuffer, "ver") == 0)
-        {
-            Error = ver(stack);
-            ErrorToLog(Error);
-        }
-
-        if(strcmp(cmdbuffer, "dmp") == 0)
-        {
-            dmp(stack);
-        }
-
-        if(strcmp(cmdbuffer, "hlt") == 0)
-        {
-            break;
-        }
-
-    }
-
-    return 0;
-}
