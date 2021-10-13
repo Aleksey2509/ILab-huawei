@@ -2,6 +2,7 @@
 #include "struct.hpp"
 #include "ReadWrite.hpp"
 #include "stack.hpp"
+#include "processor.hpp"
 
 #define ErrorToLog(Error) \
 {\
@@ -9,10 +10,7 @@
         StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);\
 }
 
-const int END = -200;
-
-int process (Stack* stack, const char* cmd, int val);
-int processor (Stack* stack, char** CmdArr);
+int process (Stack* stack, const int* CodeBuf);
 
 int push(Stack* stack, int a);
 int pop(Stack* stack);
@@ -25,104 +23,100 @@ int ver(Stack* stack);
 void dmp(Stack* stack);
 int hlt();
 
+
+
 int main(int argc, char* argv[])
 {
-    TEXT text {};
-    Stack stack;
-    int Error = TEXT_ReadFromFile(&text, argv[1]);
-    if(Error)
-    {
-        printf("%s\n", GetError(Error));
-        return 0;
-    }
-    //PrintTextStdout(&text);
+    Stack stack {};
 
-    char** CmdArr = (char**)calloc(text.nLines, sizeof(char*));
+    struct stat FileInfo;
+    int stat_flag = stat(argv[1], &FileInfo);
+    off_t size = FileInfo.st_size;
+    int* CodeBuf = (int* )calloc(size, sizeof(int));
 
-    for (int i = 0; i < text.nLines; i++)
-    {
-        CmdArr[i] = text.lines[i].line;
-    }
+    FILE* input = fopen(argv[1], "rb");
+    size_t buffSize = fread(CodeBuf, sizeof(int), size, input);
 
-    Error = StackCtor(&stack, 20);
+    int Error = StackCtor(&stack, 20);
     if(Error)
     {
         StackDump(&stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
         return 0;
     }
 
-    char cmdbuffer [1000] = { 0 };
-    int num = 0;
-    for (int i = 0; i < text.nLines; i++)
-    {
-        sscanf(CmdArr[i], "%s %d", cmdbuffer, &num);
-        process(&stack, cmdbuffer, num);
-    }
+    Error = process(&stack, CodeBuf);
+    free(CodeBuf);
 
     return 0;
 }
 
 
 
-int process (Stack* stack, const char* cmd, int val)
+int process (Stack* stack, const int* CodeBuf)
 {
     int Error = 0;
+    int ip = 0;
 
-        if(strcmp(cmd, "push") == 0)
+    // printf("printing codebuf\n");
+    // for (int i = 0; i < 20; i++)
+    // {
+    //     printf("%d ", CodeBuf[i]);
+    // }
+    // printf("\n");
+
+    while(1)
+    {
+        switch(CodeBuf[ip])
         {
-            Error = push(stack, val);
-            return Error;
-        }
+            case CMD_PUSH: push(stack, CodeBuf[ip + 1]);
+                        ip += 2;
+                        break;
 
-        if(strcmp(cmd, "pop") == 0)
-        {
-            Error = pop(stack);
-            return Error;
-        }
+            case CMD_POP: pop(stack);
+                        ip += 1;
+                        break;
 
-        if(strcmp(cmd, "add") == 0)
-        {
-            Error = add(stack);
-            return Error;
-        }
+            case CMD_ADD: add(stack);
+                        ip += 1;
+                        break;
 
-        if(strcmp(cmd, "sub") == 0)
-        {
-            Error = sub(stack);
-            return Error;
-        }
+            case CMD_SUB: sub(stack);
+                        ip += 1;
+                        break;
 
-        if(strcmp(cmd, "mul") == 0)
-        {
-            Error = mul(stack);
-            return Error;
-        }
+            case CMD_MUL: mul(stack);
+                        ip += 1;
+                        break;
 
-        if(strcmp(cmd, "out") == 0)
-        {
-            out(stack);
-            return 0;
-        }
+            case CMD_DIV: div(stack);
+                        ip += 1;
+                        break;
 
-        if(strcmp(cmd, "ver") == 0)
-        {
-            Error = ver(stack);
-            return Error;
-        }
+            case CMD_OUT: out(stack);
+                        ip += 1;
+                        break;
 
-        if(strcmp(cmd, "dmp") == 0)
-        {
-            dmp(stack);
-            return 0;
-        }
+            case CMD_VER: ver(stack);
+                        ip += 1;
+                        break;
 
-        if(strcmp(cmd, "hlt") == 0)
-        {
-            return END;
-        }
+            case CMD_DMP: dmp(stack);
+                        ip += 1;
+                        break;
 
-    return 0;
+            case CMD_HLT: return 0;
+
+            default: printf("\n\nUnknown code for command; dumping and stoppong working\n\n");
+                    dmp(stack);
+                    return 1;
+        }
+    }
+
+    return 1;
+
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
 int push(Stack* stack, int a)
 {
@@ -131,12 +125,16 @@ int push(Stack* stack, int a)
     return Error;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
 int pop(Stack* stack)
 {
     int Error = StackPop(stack);
     
     return Error;
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
 int add(Stack* stack)
 {
@@ -166,6 +164,8 @@ int add(Stack* stack)
     }
     return result;
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
 int sub(Stack* stack)
 {
@@ -197,6 +197,8 @@ int sub(Stack* stack)
     return result;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
 int mul(Stack* stack)
 {
     int a = 0;
@@ -226,6 +228,8 @@ int mul(Stack* stack)
     }
     return result;
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
 int div(Stack* stack)
 {
@@ -260,15 +264,21 @@ int div(Stack* stack)
     return result;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
 void out(Stack* stack)
 {
-    ElemDump((int*)stack->data + stack->size - 1);
+    ElemDump(stack->data + stack->size - 1);
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
 int ver(Stack* stack)
 {
     return (CheckStack(stack));
 }
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
 void dmp(Stack* stack)
 {
