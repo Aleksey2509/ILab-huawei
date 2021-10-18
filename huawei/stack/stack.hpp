@@ -9,10 +9,16 @@
 #include <signal.h>
 #include "config.h"
 
-char UpperBorder[] = "//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\";
-char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\///**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\";
+typedef int elem_t;
 
-#define StackCtor(stack, capacity, Datasize) StackCreator(stack, capacity, Datasize, __FILE__, __PRETTY_FUNCTION__, __LINE__)
+extern elem_t POISON;
+
+static char UpperBorder[] = "//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\";
+static char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\///**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\";
+
+#define StackCtor(stack, capacity) StackCreator(stack, capacity, __FILE__, __PRETTY_FUNCTION__, __LINE__)
+#define StackDtor(stack) StackDestructor(stack,  __FILE__, __PRETTY_FUNCTION__, __LINE__)
+#define CheckStack(stack) VerifyStack(stack, __FILE__, __PRETTY_FUNCTION__, __LINE__)
 
 #define TrackError(Error) \
 {\
@@ -23,22 +29,14 @@ char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\
     }\
 }
 
-#define BAD_POINTER 13
-
-char ErrorStrings[][100] = {
-                             "Stack not properly initialized (has a null ptr)\n",
-                             "Warning!: Stack not initialized\n",
-                             "ERROR! Capacity is less than size:\n",
-                             "ERROR! The size of element type is 0:\n",
-                             "Stack not properly initialized (has a data null ptr\n)",
-                             "ERROR!!! THE CANARIES AROUND DATA WERE DAMAGED",
-                             "ERROR!!! THE CANARIES WERE AROUND STACK STRUCT WERE DAMAGED"
-                           };
-
-
-static const int MULT_CONST = 2;
-static const int ENLARGE = 1;
-static const int REDUCE = -1;
+#define TrackErrorWithCallPlc(Error, FileName, LineNum, FuncName) \
+{\
+    if(Error)\
+    {\
+        StackDump(stack, FileName, LineNum, FuncName, Error);\
+        return Error;\
+    }\
+}
 
 typedef long unsigned canary_t;
 typedef long unsigned hash_t;
@@ -46,59 +44,86 @@ typedef long unsigned hash_t;
 const canary_t DATA_CANARY_VAL =  0xBAD00BAD;
 const canary_t STK_CANARY_VAL  =  0xDED00DED;
 
-enum ErrorCodes
+static const int BAD_POINTER = 13;
+static const int MULT_CONST = 2;
+static const int ENLARGE = 1;
+static const int REDUCE = -1;
+
+enum ErrorMasks
 {
-    NULL_STK_PTR = -1000,
-    NOT_INIT,
-    NULL_DST_PTR,
-    NULL_SRC_PTR,
-    NULL_DATA_PTR,
-    ZERO_DATASIZE,
-    CAP_LESS_SIZE,
-    STK_CANARY_DMG,
-    DATA_CANARY_DMG,
-    STK_HASH_ERR,
-    DATA_HASH_ERR,
+    NULL_STK_PTR    = 0x10000000,
+    NOT_INIT        = 0x01000000,
+    NULL_DATA_PTR   = 0x00100000,
+    CAP_LESS_SIZE   = 0x00010000,
+    STK_CANARY_DMG  = 0x00001000,
+    DATA_CANARY_DMG = 0x00000100,
+    STK_HASH_ERR    = 0x00000010,
+    DATA_HASH_ERR   = 0x00000001,
+    OK = 0
+};
+
+enum UserError
+{
+    NULL_SRC_PTR = -1000,
     NOT_RESIZABLE,
     NOTHING_TO_POP,
-    NOWHERE_TO_PUT,
-    OK = 0
+    USE_AFTER_DESTRUCT
+};
+
+struct CallPlace
+{
+    const char* FileName = 0;
+    const char* FuncName = 0;
+    long int LineNum = 0;
 };
 
 struct Stack // add debug mode in stack
 {
     #if CNRY_DEF
-    canary_t LeftCanary;
+    canary_t LeftCanary = 0;
     #endif
 
-    void* data;
-    size_t capacity;
-    size_t size;
-    size_t DataSize; // deprecate
+    elem_t* data = 0;
+    size_t capacity = 0;
+    size_t size = 0;
 
-    const char* CreateFile;
-    const char* CreateFunc;
-    size_t CreateLine;
+    CallPlace PlaceCrtd;
 
     #if CNRY_DEF
-    canary_t RightCanary;
+    canary_t RightCanary = 0;
     #endif
 
     #if HASH_DEF
-        hash_t DataHash;
+        hash_t DataHash = 0;
     #endif
     #if HASH_DEF
-        hash_t StackHash;
+        hash_t StackHash = 0;
     #endif
 };
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int StackCreator (Stack* stack, unsigned long capacity, unsigned long DataSize, const char* FileName, const char* FuncName, int LineNum);
-int StackResize (Stack* stack, int mode);
-int StackDtor (Stack* stack);
-int StackPush(Stack* stack, void* src);
-int StackPop(Stack* stack, void* dst);
-extern int ElemDump(void* dataptr);
-int StackDump (const Stack* stack, const char* FileName, int LineNum, const char* FuncName, int Error = 0, const char reason[] = "Just to check");
-ErrorCodes CheckStack (const Stack* stack);
+static char UserErrors [][150] = {"There is either a error with stack or stackDump was given unknown error code\n",
+                                  "Tried to push, but did not give a valid pointer\n", 
+                                  "Tried to pop from an empty stack\n",
+                                  "Tried to push to a full stack, which could not be resized\n",
+                                  "WARNING! WARNING! The stack is being used after it's destruction!!! Futher use could lead to segmentation fault!!!\n"};
+
+static char StackErrors [][200] = {"Stack not properly initialized (has a null ptr)\n",
+                                   "Warning!: Stack not initialized \n",
+                                   "ERROR! Capacity is less than size:\n",
+                                   "Stack not properly initialized (has a data null ptr)\n",
+                                   "ERROR!!! THE CANARIES AROUND DATA WERE DAMAGED:",
+                                   "ERROR!!! THE CANARIES WERE AROUND STACK STRUCT WERE DAMAGED:\n",
+                                   "ERROR!!! STACK HASH HAS BEEN CHANGED!!! THE STACK HAS BEEN INTERACTED WITH IN AN WRONG WAY\n",
+                                   "ERROR!!! DATA HASH HAS BEEN CHANGED!!! THE STACK DATA HAS BEEN INTERACTED WITH IN AN WRONG WAY\n"};
+
+int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, const char* FuncName, int LineNum);
+int StackResize (Stack* stack, int mode, size_t NewSize = 0);
+int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, int LineNum);
+int StackPush(Stack* stack, elem_t* src);
+int StackPop(Stack* stack, elem_t* dst = 0);
+char* GetUserError (int Error);
+extern int ElemDump(elem_t* dataptr);
+int StackDump (const Stack* stack, const char* FileName, int LineNum, const char* FuncName, int UserError = 0, const char reason[] = "Just to check");
+int VerifyStack (const Stack* stack, const char* FileName, const char* FuncName, int LineNum);

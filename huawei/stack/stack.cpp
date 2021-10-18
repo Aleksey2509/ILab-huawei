@@ -1,5 +1,8 @@
 #include "stack.hpp"
 
+
+FILE* logfile = fopen("log.txt", "w");
+
 //------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -15,6 +18,8 @@ unsigned long Hash( const void* key, size_t len, unsigned long prime)
     return (hash % prime);
 }
 
+//------------------------------------------------------------------------------------------------------------------------------
+
 hash_t GetStackHash (const Stack* stack)
 {
     size_t byteLen = sizeof(Stack) - 2 * sizeof(hash_t);
@@ -29,9 +34,11 @@ hash_t GetStackHash (const Stack* stack)
     return StackHash;
 }
 
+//------------------------------------------------------------------------------------------------------------------------------
+
 hash_t GetDataHash (const Stack* stack)
 {
-    size_t byteLen = stack->size * stack->DataSize;
+    size_t byteLen = stack->size * sizeof(elem_t);
     hash_t DataHash = Hash(stack, byteLen, prime);
 
     return DataHash;
@@ -39,16 +46,45 @@ hash_t GetDataHash (const Stack* stack)
 
 #endif
 
-
-
 //------------------------------------------------------------------------------------------------------------------------------
 
-FILE* logfile = fopen("log.txt", "w");
-
-//------------------------------------------------------------------------------------------------------------------------------
-
-int StackCreator (Stack* stack, unsigned long capacity, unsigned long DataSize, const char* FileName, const char* FuncName, int LineNum)
+void FillPoison (elem_t data[], size_t size)
 {
+    for (int i = 0; i < size; i++)
+    {
+        data[i] = POISON;
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+char* GetUserError (int Error)
+{
+    switch (Error)
+    {
+        case NULL_SRC_PTR:   return UserErrors[1];
+
+        case NOTHING_TO_POP: return UserErrors[2];
+
+        case NOT_RESIZABLE:  return UserErrors[3];
+
+        case USE_AFTER_DESTRUCT: return UserErrors[4];
+
+        default: return UserErrors[0];
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------
+
+int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, const char* FuncName, const int LineNum)
+{
+    if ( (FileName == NULL) || (FuncName == NULL) || (LineNum < 0) )
+    {
+        printf("You freakin' dummy, you are not supposed to touch the funcname, filename or LineNum parametres, you were given a damn macros to autofill that\n");
+        return 0;
+    }
+
     if (CheckStack(stack) == NULL_STK_PTR)
     {
         StackDump(stack, FileName, LineNum, FuncName, NULL_STK_PTR, "to print null stk ptr");
@@ -57,17 +93,20 @@ int StackCreator (Stack* stack, unsigned long capacity, unsigned long DataSize, 
 
     #if CNRY_DEF
     {
-        void* ActualStackPtr = calloc(1, capacity * DataSize + 2 * sizeof(canary_t));
+        elem_t* ActualStackPtr = (elem_t*)calloc(1, capacity * sizeof(elem_t) + 2 * sizeof(canary_t));
 
-        stack->data = (void*)((char*)ActualStackPtr + sizeof(canary_t));
+        stack->data = (elem_t*)((char*)ActualStackPtr + sizeof(canary_t));
     }
     #else 
-        stack->data = calloc(capacity, DataSize);
+        stack->data = (elem_t* )calloc(capacity, sizeof(elem_t));
     #endif
 
     stack->size = 0;
     stack->capacity = capacity;
-    stack->DataSize = DataSize;
+
+    stack->PlaceCrtd.FileName = FileName;
+    stack->PlaceCrtd.FuncName = FuncName;
+    stack->PlaceCrtd.LineNum = LineNum;
 
     #if CNRY_DEF
     {
@@ -75,13 +114,9 @@ int StackCreator (Stack* stack, unsigned long capacity, unsigned long DataSize, 
         stack->RightCanary = STK_CANARY_VAL;
 
         ((canary_t*)stack->data)[-1] = DATA_CANARY_VAL;
-        *(canary_t*)((char*)stack->data + stack->capacity * stack->DataSize) = DATA_CANARY_VAL;
+        *(canary_t*)(stack->data + stack->capacity) = DATA_CANARY_VAL;
     }
     #endif
-
-    stack->CreateFile = FileName;
-    stack->CreateFunc = FuncName;
-    stack->CreateLine = LineNum;
 
     #if HASH_DEF
     {
@@ -95,31 +130,45 @@ int StackCreator (Stack* stack, unsigned long capacity, unsigned long DataSize, 
 }
 
 
-
+//------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------
 
-int StackDtor (Stack* stack)
+int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, int LineNum)
 {
-    int Error = CheckStack(stack);
-    TrackError(Error);
+    if ( (FileName == NULL) || (FuncName == NULL) || (LineNum < 0) )
+    {
+        printf("You freakin' dummy, you are not supposed to touch the funcname, filename or LineNum parametres, you were given a damn macros to autofill that\n");
+        printf("exiting the programm");
+        exit(1);
+    }
 
-    stack->size = -1;
-    stack->DataSize = -1;
+    int Error = CheckStack(stack);
+    if (Error)
+    {
+        TrackErrorWithCallPlc(Error, FileName, LineNum, FuncName);
+    }
 
     #if CNRY_DEF
         free( ((char*)stack->data - sizeof(canary_t)) );
     #else 
         free(stack->data);
     #endif
-    
-    stack->data = (void* ) BAD_POINTER;
+
+    stack->size = -1;
+    stack->capacity = -1;
+    stack->PlaceCrtd.FileName = (char*) BAD_POINTER;
+    stack->PlaceCrtd.FuncName = (char*) BAD_POINTER;
+    stack->PlaceCrtd.LineNum = -1;
+
+    stack->data = (elem_t* ) BAD_POINTER;
 
     return 0;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------
 
-int StackPush(Stack* stack, void* src)
+int StackPush(Stack* stack, elem_t* src)
 {
     int Error = CheckStack(stack);
     TrackError(Error);
@@ -136,8 +185,7 @@ int StackPush(Stack* stack, void* src)
         TrackError(Error);
     }
 
-    void* placeToCopy = (void*)( (char*)stack->data + stack->DataSize * stack->size);
-    memcpy( placeToCopy , src, stack->DataSize);
+    (stack->data)[stack->size] = *src;
 
     stack->size++;
 
@@ -150,8 +198,9 @@ int StackPush(Stack* stack, void* src)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------
 
-int StackPop(Stack* stack, void* dst)
+int StackPop(Stack* stack, elem_t* dst)
 {
     int Error = CheckStack(stack);
     TrackError(Error);
@@ -162,18 +211,18 @@ int StackPop(Stack* stack, void* dst)
         return NOTHING_TO_POP;
     }
 
-    if (dst == 0)
-    {
-        return NULL_DST_PTR;
-    }
-
-    if ( (stack->size < (stack->capacity / 2) ) )
+    if ( (stack->size < (stack->capacity / 2) - 1 ) )
     {
         //printf("Starting reducing\n");
         Error = StackResize(stack, REDUCE);
         TrackError(Error);
     }
-    memcpy(dst, (void*)( (char*)stack->data + stack->DataSize * (stack->size - 1) ), stack->DataSize);
+
+    if (dst != 0)
+    {
+        *dst = stack->data[stack->size - 1];
+        //stack->data[stack->size - 1] = POISON;
+    }
 
     stack->size--;
 
@@ -187,125 +236,126 @@ int StackPop(Stack* stack, void* dst)
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------
 
-int StackResize (Stack* stack, int mode)
+int StackResize (Stack* stack, int mode, size_t NewSize)
 {
     int Error = CheckStack(stack);
     TrackError(Error);
 
-    size_t NewSize = 0;
-    if (mode == ENLARGE)
-        if (stack->capacity == 0)
-            NewSize = stack->DataSize * (stack->capacity + 2);
+    if (NewSize == 0)
+    {
+        if (mode == ENLARGE)
+            if (stack->capacity == 0)
+                NewSize = sizeof(elem_t) * (stack->capacity + 4);
+            else
+                NewSize = sizeof(elem_t) * stack->capacity * MULT_CONST;
         else
-            NewSize = stack->DataSize * stack->capacity * MULT_CONST;
-    else
-        NewSize = stack->DataSize * stack->capacity / MULT_CONST;
+            NewSize = stack->capacity * (sizeof(elem_t) / MULT_CONST);
+    }
 
     #if CNRY_DEF
     {
-        void* tmp = (void*)realloc((char*)stack->data - sizeof(canary_t), NewSize + 2 * sizeof(canary_t));
+        elem_t* tmp = (elem_t*)realloc((char*)stack->data - sizeof(canary_t), NewSize + 2 * sizeof(canary_t));
         if(tmp == 0)
             return NOT_RESIZABLE;
+        stack->data = (elem_t*)((char*)tmp + sizeof(canary_t));
 
-        stack->data = (void*)((char*)tmp + sizeof(canary_t));
         ((canary_t*)stack->data)[-1] = DATA_CANARY_VAL;
-        *(canary_t*)((char*)stack->data + NewSize) = DATA_CANARY_VAL;
+        *((canary_t*)( ( stack->data + NewSize / sizeof(elem_t) ))) = DATA_CANARY_VAL;
+
+        //printf("char + ... = %p, stack + ... = %p\n",(char*)stack->data + NewSize, stack->data + NewSize/sizeof(elem_t));
+       
     }
 
     #else
     {
-        void* tmp = (void*)realloc(stack->data, NewSize);
+        void* tmp = realloc(stack->data, NewSize);
         if(tmp == 0)
             return NOT_RESIZABLE;
 
-        stack->data = tmp;
+        stack->data = (elem_t*)tmp;
     }
     #endif
 
-    stack->capacity = NewSize / stack->DataSize;
-    
+    stack->capacity = NewSize / sizeof(elem_t);
+
+    #if HASH_DEF
+    stack->StackHash = GetStackHash(stack);
+    stack->DataHash  = GetDataHash(stack);
+    #endif
 
     return OK;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------
 
-int StackDump (const Stack* stack, const char* FileName, int LineNum, const char* FuncName, int Error, const char reason[])
+int StackDump (const Stack* stack, const char* FileName, int LineNum, const char* FuncName, int UserError, const char reason[])
 {
     fprintf(logfile, "%s%s\n\n", UpperBorder, UpperBorder);
 
-    fprintf(logfile, "Stack was created at %s, at %s(%lu)\n", stack->CreateFunc, stack->CreateFile, stack->CreateLine);
-    fprintf(logfile, "StackDump() Called from function: %s, File: %s line number %D for reason: %s, with error %d\n\n",FuncName, FileName, LineNum, reason, Error);
-    
-    if (!Error)
-        Error = CheckStack(stack);
-
-    if (Error == NOTHING_TO_POP)
+    if ( (stack->PlaceCrtd.LineNum < 0) || (stack->PlaceCrtd.FileName == NULL) || (stack->PlaceCrtd.FuncName == NULL) )
     {
-        fprintf(logfile, "Tried to pop when there is nothing to pop\n");
+        fprintf(logfile, "Cant print where stack was created: this info was severly damaged or not properly initialised\n");
     }
-
-    if (Error == NOWHERE_TO_PUT)
+    else
     {
-        fprintf(logfile, "Tried to put data when the stack is full and there is not enough memory for resize\n");
-    }
-
-    if (Error == NULL_SRC_PTR)
-    {
-        fprintf(logfile, "Bad source data pointer\n");
+        fprintf(logfile, "Stack was created at %s, at %s (%lu)\n", stack->PlaceCrtd.FileName, stack->PlaceCrtd.FuncName, stack->PlaceCrtd.LineNum);
     }
     
-    if (Error == NULL_DST_PTR)
+    fprintf(logfile, "StackDump() Called from function: %s, File: %s line number %D for reason: %s, with error %d\n\n",FuncName, FileName, LineNum, reason, UserError);
+
+    if (UserError)
     {
-        fprintf(logfile, "Bad destination pointer\n");
+        fprintf(logfile, "%s", GetUserError(UserError));
+        if (UserError == USE_AFTER_DESTRUCT)
+        {
+            fprintf(logfile, "%s%s\n\n", UpperBorder, UpperBorder);
+            return USE_AFTER_DESTRUCT;
+        }
     }
 
-    if (Error == NULL_STK_PTR)
+    UserError = CheckStack(stack);
+
+    if (UserError & NULL_STK_PTR)
     {
-        fprintf(logfile, "Stack not properly initialized (has a null ptr)\n"); // strerror
+        fprintf(logfile, "%s", StackErrors[0]);
         return NULL_STK_PTR;
     }
 
     fprintf(logfile, "Stack [%p]\n", stack);
-    if (Error == NOT_INIT)
+    if (UserError & NOT_INIT)
     {
-        fprintf(logfile, "Warning!: Stack not initialized \n");
+        fprintf(logfile, "%s", StackErrors[1]);
     }
 
-    if(Error == CAP_LESS_SIZE)
+    if(UserError & CAP_LESS_SIZE)
     {
-        fprintf(logfile, "ERROR! Capacity is less than size:\n");
+        fprintf(logfile, "%s", StackErrors[2]);
     }
 
     fprintf(logfile, "Size = %lu\n", stack->size);
     fprintf(logfile, "capacity = %lu\n", stack->capacity);
 
-    if(Error == ZERO_DATASIZE)
+    if (UserError & NULL_DATA_PTR)
     {
-        fprintf(logfile, "ERROR! The size of element type is 0:\n");
-    }
-
-    fprintf(logfile, "Datasize = %lu\n\n", stack->DataSize);
-
-    if (Error == NULL_DATA_PTR)
-    {
-        fprintf(logfile, "Stack not properly initialized (has a data null ptr\n)");
+        fprintf(logfile, "%s", StackErrors[3]);
         return NULL_DATA_PTR;
     }
 
     #if CNRY_DEF
     {
-        if (Error == DATA_CANARY_DMG)
+        if (UserError & DATA_CANARY_DMG)
         {
-            fprintf(logfile, "ERROR!!! THE CANARIES AROUND DATA WERE DAMAGED:\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", DATA_CANARY_VAL, DATA_CANARY_VAL);
+            fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", StackErrors[4], DATA_CANARY_VAL, DATA_CANARY_VAL);
         }
         fprintf(logfile, "Canaries around data: Left Canary - %lX, RightCanary - %lX\n\n", ((canary_t*)stack->data)[-1], 
-                                                    *(canary_t*)((char*)stack->data + stack->capacity * stack->DataSize) );
+                                                    *(canary_t*)(stack->data + stack->capacity) );
 
-        if (Error == STK_CANARY_DMG)
+        if (UserError & STK_CANARY_DMG)
         {
-            fprintf(logfile, "ERROR!!! THE CANARIES WERE AROUND STACK STRUCT WERE DAMAGED:\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", STK_CANARY_VAL, STK_CANARY_VAL);
+            fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", StackErrors[5], STK_CANARY_VAL, STK_CANARY_VAL);
         }
         fprintf(logfile, "Canaries around stack: Left Canary - %lX, RightCanary - %lX\n\n", stack->LeftCanary, stack->RightCanary);
     }
@@ -313,14 +363,14 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
 
     #if HASH_DEF
     {
-       if (Error == STK_HASH_ERR)
+       if (UserError & STK_HASH_ERR)
        {
-           fprintf (logfile, "ERROR!!! STACK HASH HAS BEEN CHANGED!!! THE STACK HAS BEEN INTERACTED WITH IN AN WRONG WAY\n");
+           fprintf (logfile, "%s", StackErrors[6]);
        }
 
-       if (Error == DATA_HASH_ERR)
+       if (UserError & DATA_HASH_ERR)
        {
-           fprintf (logfile, "ERROR!!! DATA HASH HAS BEEN CHANGED!!! THE STACK DATA HAS BEEN INTERACTED WITH IN AN WRONG WAY\n");
+           fprintf (logfile, "%s", StackErrors[7]);
        }
     }
     #endif
@@ -329,45 +379,62 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     for (int i = 0; i < stack->size; i++)
     {
         fprintf(logfile, "data[%d]: ", i);
-        ElemDump((void*)((char*)stack->data + i * stack->DataSize));
+        ElemDump(stack->data + i);
         fprintf(logfile, "\n");
     }
+    // for (int i = stack->size; i < stack->capacity; i++)
+    // {
+    //     fprintf(logfile, "data[%d]: ", i);
+    //     ElemDump(stack->data + i);
+    //     fprintf(logfile, "(POISON)\n");
+    // }
 
     fprintf(logfile, "%s%s\n\n", UpperBorder, UpperBorder);
     return 0;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------------
 
-ErrorCodes CheckStack (const Stack* stack)
+int VerifyStack (const Stack* stack, const char* FileName, const char* FuncName, int LineNum)
 {
-    if (stack == 0)
-    return NULL_STK_PTR;
+    int Error = OK;
 
-    if (stack->data == 0)
+    if (stack == NULL)
     {
-        if ( (stack->capacity == stack->size) && (stack->size == 0) )
-            return NOT_INIT;
-        else
-            return NULL_DATA_PTR;
+        return NULL_STK_PTR;
     }
-    
-    if (stack->capacity < stack->size)
-    return CAP_LESS_SIZE;
 
-    if (stack->DataSize == 0)
-    return ZERO_DATASIZE;
+    if (stack->capacity < stack->size)
+        Error |= CAP_LESS_SIZE;
+
+    if (stack->data == NULL)
+    {
+        
+        if ( (stack->capacity == 0) && (stack->size == 0) )
+        {
+            return NOT_INIT;
+        }
+        else
+        {
+            
+            return NULL_DATA_PTR;
+        }
+    }
+
+    if ((elem_t*)stack->data == (elem_t*) BAD_POINTER || stack->PlaceCrtd.FileName == (char*) BAD_POINTER || stack->PlaceCrtd.FuncName == (char*) BAD_POINTER)
+        return USE_AFTER_DESTRUCT;
 
     #if CNRY_DEF
-    if ( ( ((canary_t*)stack->data)[-1] != DATA_CANARY_VAL ) || ( *(canary_t*)((char*)stack->data + stack->capacity * stack->DataSize) != DATA_CANARY_VAL ) )
+    if ( ( ((canary_t*)stack->data)[-1] != DATA_CANARY_VAL ) || ( *(canary_t*)(stack->data + stack->capacity) != DATA_CANARY_VAL ) )
     {
         //printf("ERROR!!! CANARIES AROUND DATA GOT DAMAGED!!!\n");
         //printf("LeftCanary = %lX, RightCanary = %lX\n\n", ((canary_t*)stack->data)[-1], *(canary_t*)((char*)stack->data + stack->capacity * stack->DataSize));
-        return DATA_CANARY_DMG;
+        Error |= DATA_CANARY_DMG;
     }
     if (stack->LeftCanary != STK_CANARY_VAL || stack->RightCanary != STK_CANARY_VAL)
     {
-        return STK_CANARY_DMG;
+        Error |= STK_CANARY_DMG;
     }
     #endif
 
@@ -375,13 +442,13 @@ ErrorCodes CheckStack (const Stack* stack)
     {
         hash_t stackHash = GetStackHash(stack);
         if (stackHash != stack->StackHash)
-            return STK_HASH_ERR;
+            Error |= STK_HASH_ERR;
 
         hash_t dataHash = GetDataHash(stack);
         if (dataHash != stack->DataHash)
-            return DATA_HASH_ERR;
+            Error |= DATA_HASH_ERR;
     }
     #endif
 
-    return OK;
+    return Error;
 }
