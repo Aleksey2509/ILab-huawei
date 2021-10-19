@@ -142,11 +142,13 @@ int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, i
         exit(1);
     }
 
+    #if VRFCTR_DEF
     int Error = CheckStack(stack);
     if (Error)
     {
         TrackErrorWithCallPlc(Error, FileName, LineNum, FuncName);
     }
+    #endif
 
     #if CNRY_DEF
         free( ((char*)stack->data - sizeof(canary_t)) );
@@ -170,9 +172,12 @@ int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, i
 
 int StackPush(Stack* stack, elem_t* src)
 {
-    int Error = CheckStack(stack);
+    int Error = 0;
+    #if VRFCTR_DEF
+    Error = CheckStack(stack);
     TrackError(Error);
-    
+    #endif
+
     if (src == 0)
     {
         StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, NULL_SRC_PTR);
@@ -202,8 +207,11 @@ int StackPush(Stack* stack, elem_t* src)
 
 int StackPop(Stack* stack, elem_t* dst)
 {
-    int Error = CheckStack(stack);
+    int Error = 0;
+    #if VRFCTR_DEF
+    Error = CheckStack(stack);
     TrackError(Error);
+    #endif
 
     if (stack->size == 0)
     {
@@ -240,8 +248,10 @@ int StackPop(Stack* stack, elem_t* dst)
 
 int StackResize (Stack* stack, int mode, size_t NewSize)
 {
+    #if VRFCTR_DEF
     int Error = CheckStack(stack);
     TrackError(Error);
+    #endif
 
     if (NewSize == 0)
     {
@@ -303,34 +313,37 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     {
         fprintf(logfile, "Stack was created at %s, at %s (%lu)\n", stack->PlaceCrtd.FileName, stack->PlaceCrtd.FuncName, stack->PlaceCrtd.LineNum);
     }
-    
+
     fprintf(logfile, "StackDump() Called from function: %s, File: %s line number %D for reason: %s, with error %d\n\n",FuncName, FileName, LineNum, reason, UserError);
 
-    if (UserError)
+    if (UserError < 0)
     {
         fprintf(logfile, "%s", GetUserError(UserError));
         if (UserError == USE_AFTER_DESTRUCT)
         {
-            fprintf(logfile, "%s%s\n\n", UpperBorder, UpperBorder);
+            fprintf(logfile, "%s%s\n\n", LowerBorder, LowerBorder);
             return USE_AFTER_DESTRUCT;
         }
     }
 
-    UserError = CheckStack(stack);
+    #if VRFCTR_DEF
+    int StackError = CheckStack(stack);
 
-    if (UserError & NULL_STK_PTR)
+    if (StackError & NULL_STK_PTR)
     {
         fprintf(logfile, "%s", StackErrors[0]);
         return NULL_STK_PTR;
     }
 
     fprintf(logfile, "Stack [%p]\n", stack);
-    if (UserError & NOT_INIT)
+    if (StackError & NOT_INIT)
     {
         fprintf(logfile, "%s", StackErrors[1]);
+        fprintf(logfile, "%s%s\n\n", LowerBorder, LowerBorder);
+        return NOT_INIT;
     }
 
-    if(UserError & CAP_LESS_SIZE)
+    if(StackError & CAP_LESS_SIZE)
     {
         fprintf(logfile, "%s", StackErrors[2]);
     }
@@ -338,22 +351,25 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     fprintf(logfile, "Size = %lu\n", stack->size);
     fprintf(logfile, "capacity = %lu\n", stack->capacity);
 
-    if (UserError & NULL_DATA_PTR)
+    if (StackError & NULL_DATA_PTR)
     {
         fprintf(logfile, "%s", StackErrors[3]);
+        fprintf(logfile, "%s%s\n\n", LowerBorder, LowerBorder);
         return NULL_DATA_PTR;
     }
 
+    fflush(logfile);
+
     #if CNRY_DEF
     {
-        if (UserError & DATA_CANARY_DMG)
+        if (StackError & DATA_CANARY_DMG)
         {
             fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", StackErrors[4], DATA_CANARY_VAL, DATA_CANARY_VAL);
         }
         fprintf(logfile, "Canaries around data: Left Canary - %lX, RightCanary - %lX\n\n", ((canary_t*)stack->data)[-1], 
                                                     *(canary_t*)(stack->data + stack->capacity) );
 
-        if (UserError & STK_CANARY_DMG)
+        if (StackError & STK_CANARY_DMG)
         {
             fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", StackErrors[5], STK_CANARY_VAL, STK_CANARY_VAL);
         }
@@ -363,12 +379,12 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
 
     #if HASH_DEF
     {
-       if (UserError & STK_HASH_ERR)
+       if (StackError & STK_HASH_ERR)
        {
            fprintf (logfile, "%s", StackErrors[6]);
        }
 
-       if (UserError & DATA_HASH_ERR)
+       if (StackError & DATA_HASH_ERR)
        {
            fprintf (logfile, "%s", StackErrors[7]);
        }
@@ -376,7 +392,7 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     #endif
 
     fprintf(logfile, "dataptr = %p\n", stack->data);
-    for (int i = 0; i < stack->size; i++)
+    for (int i = 0; i < stack->capacity; i++)
     {
         fprintf(logfile, "data[%d]: ", i);
         ElemDump(stack->data + i);
@@ -388,8 +404,9 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     //     ElemDump(stack->data + i);
     //     fprintf(logfile, "(POISON)\n");
     // }
+    #endif
 
-    fprintf(logfile, "%s%s\n\n", UpperBorder, UpperBorder);
+    fprintf(logfile, "%s%s\n\n", LowerBorder, LowerBorder);
     return 0;
 }
 

@@ -110,19 +110,19 @@ static char UserErrors [][150] = {"There is either a error with stack or stackDu
                                   "WARNING! WARNING! The stack is being used after it's destruction!!! Futher use could lead to segmentation fault!!!\n"};
 
 static char StackErrors [][200] = {"Stack not properly initialized (has a null ptr)\n",
-                                   "Warning!: Stack not initialized \n",
+                                   "Warning! Stack not initialized \n",
                                    "ERROR! Capacity is less than size:\n",
-                                   "Stack not properly initialized (has a data null ptr)\n",
+                                   "Stack not properly initialized (has a data null ptr). The user probably forgot to use StackCtor()\n",
                                    "ERROR!!! THE CANARIES AROUND DATA WERE DAMAGED:",
                                    "ERROR!!! THE CANARIES WERE AROUND STACK STRUCT WERE DAMAGED:\n",
                                    "ERROR!!! STACK HASH HAS BEEN CHANGED!!! THE STACK HAS BEEN INTERACTED WITH IN AN WRONG WAY\n",
                                    "ERROR!!! DATA HASH HAS BEEN CHANGED!!! THE STACK DATA HAS BEEN INTERACTED WITH IN AN WRONG WAY\n"};
 
 int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, const char* FuncName, int LineNum);
-int StackResize (Stack* stack, int mode, size_t NewSize = 0);
 int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, int LineNum);
 int StackPush(Stack* stack, elem_t* src);
 int StackPop(Stack* stack, elem_t* dst = 0);
+int StackResize (Stack* stack, int mode, size_t NewSize = 0);
 char* GetUserError (int Error);
 extern int ElemDump(elem_t* dataptr);
 int StackDump (const Stack* stack, const char* FileName, int LineNum, const char* FuncName, int UserError = 0, const char reason[] = "Just to check");

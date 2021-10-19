@@ -35,6 +35,10 @@ ZeroCap: $(OBJ) $(OBJL)/ZeroCap.o
 	$(CXX) $(CPPFLAGS) -o $(EXECL)/ZeroCap $(OBJL)/ZeroCap.o $(OBJ) 
 	$(EXECL)/ZeroCap
 
+NotInit: $(OBJ) $(OBJL)/NotInit.o
+	$(CXX) $(CPPFLAGS) -o $(EXECL)/NotInit $(OBJL)/NotInit.o $(OBJ) 
+	$(EXECL)/NotInit
+
 $(OBJL)/stack.o: stack.cpp
 
 $(OBJL)/PopEmpty.o: $(TESTL)/PopEmpty.cpp
@@ -46,3 +50,5 @@ $(OBJL)/Annihilation.o: $(TESTL)/Annihilation.cpp
 $(OBJL)/ResizeTest.o: $(TESTL)/ResizeTest.cpp
 
 $(OBJL)/ZeroCap.o: $(TESTL)/ZeroCap.cpp
+
+$(OBJL)/NotInit.o: $(TESTL)/NotInit.cpp
