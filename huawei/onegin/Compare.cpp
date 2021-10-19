@@ -26,7 +26,7 @@ int StraightComparator (const void* arg1, const void* arg2)
             i++;
             charlen1--;
         }
-        while ( !(isalpha(line2[j])) && (line2[j] != '\0') && (line1[i] != '\n') )
+        while ( !(isalpha(line2[j])) && (line2[j] != '\0') && (line1[j] != '\n') )
         {
             j++;
             charlen2--;

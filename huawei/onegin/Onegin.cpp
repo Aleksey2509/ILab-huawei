@@ -17,7 +17,7 @@ int Onegin (const char* FileFrom, const char* FileTo)
     }
 
     //qsort(text.lines, text.nLines, sizeof(line_t), StraightComparator);
-    Myqsort(text.lines, text.nLines, sizeof(line_t), ReverseComparator);
+    Myqsort(text.lines, text.nLines, sizeof(line_t), StraightComparator);
 
     Error = PrintTextToFile(FileTo, &text);
     if (Error)
