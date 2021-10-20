@@ -48,16 +48,6 @@ hash_t GetDataHash (const Stack* stack)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-void FillPoison (elem_t data[], size_t size)
-{
-    for (int i = 0; i < size; i++)
-    {
-        data[i] = POISON;
-    }
-}
-
-//------------------------------------------------------------------------------------------------------------------------------
-
 char* GetUserError (int Error)
 {
     switch (Error)
@@ -229,7 +219,6 @@ int StackPop(Stack* stack, elem_t* dst)
     if (dst != 0)
     {
         *dst = stack->data[stack->size - 1];
-        //stack->data[stack->size - 1] = POISON;
     }
 
     stack->size--;
@@ -392,7 +381,7 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     #endif
 
     fprintf(logfile, "dataptr = %p\n", stack->data);
-    for (int i = 0; i < stack->capacity; i++)
+    for (int i = 0; i < stack->size; i++)
     {
         fprintf(logfile, "data[%d]: ", i);
         ElemDump(stack->data + i);

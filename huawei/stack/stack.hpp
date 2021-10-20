@@ -11,8 +11,6 @@
 
 typedef int elem_t;
 
-extern elem_t POISON;
-
 static char UpperBorder[] = "//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\";
 static char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\///**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\";
 
@@ -44,16 +42,16 @@ typedef long unsigned hash_t;
 const canary_t DATA_CANARY_VAL =  0xBAD00BAD;
 const canary_t STK_CANARY_VAL  =  0xDED00DED;
 
-static const int BAD_POINTER = 13;
+static const int BAD_POINTER = 13; // static const elem_t* BAD_PTR = 13;
 static const int MULT_CONST = 2;
 static const int ENLARGE = 1;
 static const int REDUCE = -1;
 
-enum ErrorMasks
+enum ErrorMasks // crit errors - positive codes
 {
-    NULL_STK_PTR    = 0x10000000,
-    NOT_INIT        = 0x01000000,
-    NULL_DATA_PTR   = 0x00100000,
+    NULL_STK_PTR    = 0x10000000, // 4000
+    NOT_INIT        = 0x01000000, // 2000
+    NULL_DATA_PTR   = 0x00100000, // 1000
     CAP_LESS_SIZE   = 0x00010000,
     STK_CANARY_DMG  = 0x00001000,
     DATA_CANARY_DMG = 0x00000100,
@@ -62,7 +60,7 @@ enum ErrorMasks
     OK = 0
 };
 
-enum UserError
+enum UserError // not crit errors
 {
     NULL_SRC_PTR = -1000,
     NOT_RESIZABLE,
@@ -94,10 +92,8 @@ struct Stack // add debug mode in stack
     #endif
 
     #if HASH_DEF
-        hash_t DataHash = 0;
-    #endif
-    #if HASH_DEF
-        hash_t StackHash = 0;
+    hash_t DataHash = 0;
+    hash_t StackHash = 0;
     #endif
 };
 

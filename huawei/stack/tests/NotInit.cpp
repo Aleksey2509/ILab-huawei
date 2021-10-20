@@ -8,7 +8,6 @@ int ElemDump(elem_t* ptr)
     return 0;
 }
 
-elem_t POISON = 1;
 
 int main()
 {

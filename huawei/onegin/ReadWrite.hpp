@@ -1,10 +1,20 @@
+// TEXT_FUNCTIONALITY?
+
+#ifndef READWRITE_HPP_INCL
+#define READWRITE_HPP_INCL
+
+// Code goes here
+
+#endif // #ifndef READWRITE_HPP_INCL
+
 static const int MAX_INPUT_LINES = 10000;
 static const int MAX_LINE_LENGTH = 4096;
 
+// comments and enum?
 static const int REDUCE  = -5;
 static const int ENLARGE = -4; 
 
-static const int MULT_CONST = 2;
+// static const int MULT_CONST = 2;
 
 enum ERROR_CODES
 {

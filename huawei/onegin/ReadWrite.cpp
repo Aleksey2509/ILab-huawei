@@ -14,20 +14,17 @@ int TEXT_ReadFromFile(TEXT* text, const char* FileName)
     Error = TEXT_Parcer(text);
 
     return Error; // if everything is alright after parcer, the Error will be set to state OK = 0
-
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 
 int TEXT_Parcer (TEXT* text)
 {
-    unsigned int AllocedMemory = MAX_INPUT_LINES * sizeof(line_t);
+    size_t AllocedMemory = MAX_INPUT_LINES * sizeof(line_t); // just num of lines
 
-    text->lines = (line_t *) calloc(MAX_INPUT_LINES, sizeof(line_t));
+    text->lines = (line_t *) calloc(MAX_INPUT_LINES, sizeof(line_t)); // use AllocatedMemory?
     if ( !text->lines )
-    {
         return NOT_ENGH_MEM;
-    }
 
     for (int i = 0; i < text->buffSize ;i++)
     {
@@ -38,12 +35,12 @@ int TEXT_Parcer (TEXT* text)
         text->lines[text->nLines].line = (text->buffer + i);
         text->lines[text->nLines].lineLen = len;
 
-        i += text->lines[text->nLines].lineLen;
+        i += text->lines[text->nLines].lineLen; // len
         text->nLines++;
 
         if (text->nLines > (AllocedMemory / sizeof(line_t)))
         {
-            text->lines = ReallocLineArr(text->lines, &AllocedMemory);
+            text->lines = ReallocLineArr(text->lines, &AllocedMemory); // just add code
             if (!text->lines)
                 return NOT_ENGH_MEM;
         }
@@ -94,7 +91,7 @@ int PrintTextStdout(TEXT* text)
 {
     for (int i = 0; i < text->nLines; i++)
     {
-        PrintLineToFile(text->lines + i, stdout);
+        PrintLineToFile(text->lines + i, stdout); // use fputline
     }
     return 0;
 }
@@ -117,8 +114,8 @@ int PrintTextToFile (const char* path, const TEXT* text)
 
 	for(int i = 0; i < text->nLines; i++)
 	{
-		PrintLineToFile(text->lines + i, file);
-	}
+        PrintLineToFile(text->lines + i, file);
+    }
     fclose(file);
 
     return 0;
@@ -126,10 +123,10 @@ int PrintTextToFile (const char* path, const TEXT* text)
 }
 //------------------------------------------------------------------------------------------------------------------------------
 
-int PrintLineToFile(const line_t* str, FILE* stream)
+int PrintLineToFile(const line_t* str, FILE* stream) // look for std function
 {
     fwrite(str->line, sizeof(char), str->lineLen, stream);
-    fwrite("\n", sizeof(char), 1, stream);
+    fwrite("\n", sizeof(char), 1, stream); // fputc(...)
 
     return 0;
 }
@@ -168,7 +165,7 @@ size_t mystrlen(const char* string)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-line_t* ReallocLineArr (line_t* lines, unsigned int* AllocedMemory)
+line_t* ReallocLineArr (line_t* lines, unsigned int* AllocedMemory) // deprecate?
 {
     *AllocedMemory *= MULT_CONST;
     lines = (line_t*)realloc(lines, *AllocedMemory);

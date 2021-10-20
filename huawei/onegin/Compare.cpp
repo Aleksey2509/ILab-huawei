@@ -19,7 +19,7 @@ int StraightComparator (const void* arg1, const void* arg2)
 
     //printf("Comparing %.*s and %.*s\n", len1, line1, len2, line2);
 
-    for (int i = 0, j = 0; (i < len1 + 1) && (j < len2 + 1); )
+    for (int i = 0, j = 0; (i < len1 + 1) && (j < len2 + 1); ) // simplyfi
     {
         while ( !(isalpha(line1[i])) && (line1[i] != '\0') && (line1[i] != '\n') )
         {
@@ -113,7 +113,7 @@ int CharComparator (char a, char b)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-void LineSwap (line_t* line1Ptr, line_t* line2Ptr)
+void LineSwap (line_t* line1Ptr, line_t* line2Ptr) // remove
 {
     line_t tmp = *line1Ptr;
     *line1Ptr = *line2Ptr;
