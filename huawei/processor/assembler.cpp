@@ -11,6 +11,7 @@
 }
 
 FILE* lst = fopen("lst.txt", "w");
+Signature mysign = {2, 100};
 
 int CmdToCode(char* cmdbuf, int num, char* CodeBuf, int ip);
 int PrintToLst (int addr, const char* CmdName, char* Codebuf, int num = 0);
@@ -28,7 +29,7 @@ int main(int argc, char* argv[])
     //PrintTextStdout(&text);
 
     char** CmdArr = (char**)calloc(text.nLines, sizeof(char*));
-    char* CodeBuf = (char *)calloc(text.nLines * 2, sizeof(int));
+    char* CodeBuf = (char *)calloc(1, sizeof(Signature) + text.nLines * 2 * sizeof(int));
 
     for (int i = 0; i < text.nLines; i++)
     {
@@ -135,10 +136,10 @@ int PrintToLst (int addr, const char* CmdName, char* Codebuf, int num)
 {
     switch (Codebuf[0])
     {
-        case CMD_PUSH:  fprintf(lst, "%04d | %02d | %02hhX %02hhX %02hhX %02hhX | %s %02d\n", addr, Codebuf[0], Codebuf[1], Codebuf[2], Codebuf[3], Codebuf[4], CmdName, num);
+        case CMD_PUSH:  fprintf(lst, "%04d | %02d  %02hhX %02hhX %02hhX %02hhX | %s %02d\n", addr, Codebuf[0], Codebuf[1], Codebuf[2], Codebuf[3], Codebuf[4], CmdName, num);
                         break;
-        default: fprintf(lst, "%04d | %02d | %11c | %s\n", addr, Codebuf[0], ' ', CmdName);
-                 break;
+        default:        fprintf(lst, "%04d | %02d  %11c | %s\n", addr, Codebuf[0], ' ', CmdName);
+                        break;
     }
     return 0;
 }

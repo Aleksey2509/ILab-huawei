@@ -10,6 +10,17 @@
         StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);\
 }
 
+
+struct Processor
+{
+    Stack stack {};
+    int reg[4] = {0};
+    char* codeArr = 0;
+    int ip = 0;
+    int* RAM = 0;
+
+};
+
 int process (Stack* stack, const char* CodeBuf);
 int CreateBuffer(const char* FileName, char** Buffer);
 
@@ -27,10 +38,9 @@ void dmp(Stack* stack);
 
 int main(int argc, char* argv[])
 {
-    Stack stack {};
+    Processor processor = {};
 
-    char* CodeBuf;
-    int Error = CreateBuffer(argv[1], &CodeBuf);
+    int Error = CreateBuffer(argv[1], &(processor.codeArr));
     if (Error)
     {
         printf("%s\n", GetError(Error));
@@ -42,15 +52,11 @@ int main(int argc, char* argv[])
     //     printf("%d ", CodeBuf[i]);
     // }
 
-    Error = StackCtor(&stack, 20);
-    if(Error)
-    {
-        StackDump(&stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return 0;
-    }
+    StackCtor(&(processor.stack), 20);
 
-    Error = process(&stack, CodeBuf);
-    free(CodeBuf);
+    Error = process(&processor.stack, processor.codeArr);
+    free(processor.codeArr);
+    StackDtor(&processor.stack);
 
     return 0;
 }
@@ -179,26 +185,16 @@ int add(Stack* stack)
     int b = 0;
 
     int Error = StackPop(stack, &a);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
+    TrackError(Error);
 
     Error = StackPop(stack, &b);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
+    TrackError(Error);
 
     int result = a + b;
 
     Error = StackPush(stack, &result);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-    }
+    TrackError(Error);
+
     return result;
 }
 
@@ -210,28 +206,17 @@ int sub(Stack* stack)
     int b = 0;
 
     int Error = StackPop(stack, &a);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
+    TrackError(Error);
 
     Error = StackPop(stack, &b);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
+    TrackError(Error);
 
     int result = b - a;
 
     Error = StackPush(stack, &result);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
-    return result;
+    TrackError(Error);
+
+    return GOOD;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -242,27 +227,16 @@ int mul(Stack* stack)
     int b = 0;
 
     int Error = StackPop(stack, &a);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
+    TrackError(Error);
 
     Error = StackPop(stack, &b);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
+    TrackError(Error);
 
     int result = a * b;
 
     Error = StackPush(stack, &result);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
+    TrackError(Error);
+
     return result;
 }
 
@@ -274,30 +248,19 @@ int div(Stack* stack)
     int b = 0;
 
     int Error = StackPop(stack, &a);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
+    TrackError(Error);
 
     Error = StackPop(stack, &b);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
+    TrackError(Error);
 
     if (b == 0)
         return -1;
 
-    int result = a + b;
+    int result = a / b;
 
     Error = StackPush(stack, &result);
-    if (Error)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);
-        return Error;
-    }
+    TrackError(Error);
+
     return result;
 }
 
@@ -305,6 +268,9 @@ int div(Stack* stack)
 
 void out(Stack* stack)
 {
+    if (stack->size == 0)
+        return;
+
     printf("%d\n", stack->data[stack->size - 1]);
 }
 

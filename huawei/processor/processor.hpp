@@ -1,3 +1,10 @@
+struct Signature
+{
+    int Sign;
+    int Version;
+};
+
+
 enum Commands
 {
     CMD_HLT = 0,

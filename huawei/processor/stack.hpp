@@ -85,6 +85,24 @@ struct Stack // add debug mode in stack
 //------------------------------------------------------------------------------------------------------------------------------
 
 
+static char UpperBorder[] = "\n//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\";
+static char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\///**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\";
+
+static char UserErrors [][100] = {"There is either a error with stack or stackDump was given unknown error code\n",
+                           "Tried to push, but did not give a valid pointer\n", 
+                           "Tried to pop from an empty stack\n",
+                           "Tried to push to a full stack, which could not be resized\n"
+                           "Tried to pop from a poisoned region\n"};
+
+static char StackErrors [][200] = {"Stack not properly initialized (has a null ptr)\n",
+                            "Warning!: Stack not initialized \n",
+                            "ERROR! Capacity is less than size:\n",
+                            "Stack not properly initialized (has a data null ptr)\n",
+                            "ERROR!!! THE CANARIES AROUND DATA WERE DAMAGED",
+                            "ERROR!!! THE CANARIES WERE AROUND STACK STRUCT WERE DAMAGED\n",
+                            "ERROR!!! STACK HASH HAS BEEN CHANGED!!! THE STACK HAS BEEN INTERACTED WITH IN AN WRONG WAY\n",
+                            "ERROR!!! DATA HASH HAS BEEN CHANGED!!! THE STACK DATA HAS BEEN INTERACTED WITH IN AN WRONG WAY\n"};
+
 
 int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, const char* FuncName, int LineNum);
 int StackResize (Stack* stack, int mode);
