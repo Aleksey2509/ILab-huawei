@@ -48,6 +48,7 @@ int ListDtor (List* lst);
 
 int FindFreeSpot(List* lst);
 int FindPrevElem(List* lst, int index);
+int LogicalToPhysical (List* lst, int logicalPlace);
 
 int ResizeList (List* lst);
 

@@ -41,6 +41,25 @@ int ListDtor (List* lst)
     return OK;
 }
 
+int LogicalToPhysical (List* lst, int logicalPlace)
+{
+    int Error = ListVerify(lst);
+    if (Error)
+    {
+        ListDump(lst);
+        return Error;
+    }
+
+    int physicalPlace = lst->head;
+
+    for (int i = 0; i < logicalPlace; i++)
+    {
+        physicalPlace = lst->next[physicalPlace];
+    }
+
+    return physicalPlace;
+}
+
 int FindFreeSpot(List* lst)
 {
     int freeIndex = 0;
@@ -68,15 +87,13 @@ int FindPrevElem(List* lst, int index)
 
 int ResizeList (List* lst)
 {
-    int* tmp = (int*)realloc(lst->data, 2 * lst->capacity * sizeof(int));
-    if (tmp == NULL)
+    int* tmpdata = (int*)realloc(lst->data, 2 * lst->capacity * sizeof(int));
+    int* tmpnext = (int*)realloc(lst->next, 2 * lst->capacity * sizeof(int));
+    if ((tmpdata == NULL) || (tmpnext == NULL))
         return CANT_RESIZE_LIST;
-    lst->data = tmp;
 
-    tmp = (int*)realloc(lst->next, 2 * lst->capacity * sizeof(int));
-    if (tmp == NULL)
-        return CANT_RESIZE_LIST;
-    lst->next = tmp;
+    lst->data = tmpdata;
+    lst->next = tmpnext;
 
     memset(lst->data + lst->capacity, 0, lst->capacity * sizeof(int));
     memset(lst->next + lst->capacity, FREE_SPOT, lst->capacity * sizeof(int));
@@ -88,14 +105,20 @@ int ResizeList (List* lst)
 
 int ListAdd (List* lst, int index, int val) // add insert before
 {
-    assert (lst);
+    int Error = ListVerify(lst);
+    if (Error)
+    {
+        ListDump(lst);
+        return Error;
+    }
 
-    if (lst->next[index] == FREE_SPOT)
+    if (lst->next[index] == FREE_SPOT && (lst->head != 0))
         return 0;
     //printf("adding after %d val %d\n", index, val);
 
     int freeIndex = FindFreeSpot(lst);
-    //printf("free spot - %d\n", freeIndex);
+
+    printf("free spot - %d\n", freeIndex);
     if (freeIndex == 0)
     {
         int Error = ResizeList(lst);
@@ -132,7 +155,12 @@ int ListAdd (List* lst, int index, int val) // add insert before
 
 int ListRemove (List* lst, int index)
 {
-    assert (lst);
+    int Error = ListVerify(lst);
+    if (Error)
+    {
+        ListDump(lst);
+        return Error;
+    }
 
     if (lst->next[index] == FREE_SPOT)
         return 0;
@@ -176,7 +204,7 @@ int ListDump (List* lst)
 
     printf("\nhead = %d, capacity - %zu, tail - %d\n", lst->head, lst->capacity, lst->tail);
 
-    if (Error = NULL_DATA_PTR)
+    if (Error == NULL_DATA_PTR)
         printf("Warning! Null data ptr!!\n");
     else
     {
@@ -187,7 +215,7 @@ int ListDump (List* lst)
         }
     }
 
-    if (Error = NULL_NEXT_PTR)
+    if (Error == NULL_NEXT_PTR)
         printf("Warning! Null next ptr!!\n");
     else
     {
@@ -220,6 +248,9 @@ int ListVerify (List* lst)
 
     if (lst->capacity == 0)
         return NULL_CAP;
+
+    if ((lst->head == 0) && (lst->tail == 0))
+        return OK;
 
     int runThrough = lst->head;
     int jumpCounter = 0;
