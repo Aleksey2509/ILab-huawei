@@ -12,17 +12,16 @@ const int FREE_SPOT = -1;
 
 struct ListNode
 {
-    int value;
-    int next;
-    int prev;
+    int value = 0;
+    int next = 0;
+    int prev = 0;
 };
 
 struct List
 {
     int head = 0;
     int tail = 0;
-    int* data = 0;
-    int* next = 0;
+    ListNode* node;
     size_t capacity = 0;
 };
 
@@ -31,8 +30,7 @@ enum Error
     NULL_LST_PTR = -1000,
     ADD_AFTER_FREE,
     REMOVE_FREE,
-    NULL_DATA_PTR,
-    NULL_NEXT_PTR,
+    NULL_NODE_PTR,
     INIT_ERROR,
     NULL_CAP,
     TAIL_NOT_PROPER,

@@ -37,10 +37,26 @@ int main()
     if (Error)
         printf("Error - %d\n", Error);
 
-    ListRemove(&testSubj, place10);
-    ListRemove(&testSubj, place20);
-    ListRemove(&testSubj, place40);
 
+    int place50 = ListAdd(&testSubj, place20, 50);
+    Error = ListDump(&testSubj);
+    if (Error)
+        printf("Error - %d\n", Error);
+    // printf("first - %d, second - %d, third - %d\n", LogicalToPhysical(&testSubj, 0), LogicalToPhysical(&testSubj, 1), LogicalToPhysical(&testSubj, 2));
+
+    printf("Starting removing staff");
+
+    ListRemove(&testSubj, place10);
+    Error = ListDump(&testSubj);
+    if (Error)
+        printf("Error - %d\n", Error);
+
+    ListRemove(&testSubj, place40);
+    Error = ListDump(&testSubj);
+    if (Error)
+        printf("Error - %d\n", Error);
+
+    ListRemove(&testSubj, place30);
     Error = ListDump(&testSubj);
     if (Error)
         printf("Error - %d\n", Error);

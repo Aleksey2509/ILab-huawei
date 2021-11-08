@@ -5,16 +5,13 @@ int ListCtor (List* lst, size_t capacity)
     assert(lst);
     assert(capacity);
 
-    lst->data = (int*)calloc(capacity, sizeof(int));
-    if (lst->data == NULL)
-        return CANT_ALLOC_MEM;
+    lst->node = (ListNode*)calloc(capacity, sizeof(ListNode));
 
-    lst->next = (int*)calloc(capacity, sizeof(int));
-    if (lst->data == NULL)
+    if (lst->node == NULL)
         return CANT_ALLOC_MEM;
 
     lst->head = lst->tail = 0;
-    memset(lst->next + 1, FREE_SPOT, (capacity - 1) * sizeof(int));
+    memset(lst->node + 1, FREE_SPOT, (capacity - 1) * sizeof(ListNode));
     lst->capacity = capacity;
 
     return OK;
@@ -24,15 +21,10 @@ int ListDtor (List* lst)
 {
     assert(lst);
 
-    if (lst->data != NULL)
+    if (lst->node != NULL)
     {
-        free(lst->data);
-        lst->data = NULL;
-    }
-    if (lst->next != NULL)
-    {
-        free(lst->next);
-        lst->next = NULL;
+        free(lst->node);
+        lst->node = NULL;
     }
 
     lst->head = lst->tail = 0;
@@ -54,7 +46,7 @@ int LogicalToPhysical (List* lst, int logicalPlace)
 
     for (int i = 0; i < logicalPlace; i++)
     {
-        physicalPlace = lst->next[physicalPlace];
+        physicalPlace = lst->node[physicalPlace].next;
     }
 
     return physicalPlace;
@@ -63,7 +55,7 @@ int LogicalToPhysical (List* lst, int logicalPlace)
 int FindFreeSpot(List* lst)
 {
     int freeIndex = 0;
-    for (freeIndex = 0; (freeIndex < lst->capacity) && (lst->next[freeIndex] != FREE_SPOT); freeIndex++)
+    for (freeIndex = 0; (freeIndex < lst->capacity) && (lst->node[freeIndex].next != FREE_SPOT); freeIndex++)
     ;
 
     if (freeIndex == lst->capacity)
@@ -72,31 +64,16 @@ int FindFreeSpot(List* lst)
     return freeIndex;
 }
 
-int FindPrevElem(List* lst, int index)
-{
-    int prevIndex = lst->head;
-
-    while ((prevIndex != lst->tail) && (lst->next[prevIndex] != index))
-        prevIndex = lst->next[prevIndex];
-
-    if (prevIndex == lst->tail)
-        return 0;
-
-    return prevIndex;
-}
 
 int ResizeList (List* lst)
 {
-    int* tmpdata = (int*)realloc(lst->data, 2 * lst->capacity * sizeof(int));
-    int* tmpnext = (int*)realloc(lst->next, 2 * lst->capacity * sizeof(int));
-    if ((tmpdata == NULL) || (tmpnext == NULL))
+    ListNode* tmp = (ListNode*)realloc(lst->node, 2 * lst->capacity * sizeof(ListNode));
+    if (tmp == NULL)
         return CANT_RESIZE_LIST;
 
-    lst->data = tmpdata;
-    lst->next = tmpnext;
+    lst->node = tmp;
 
-    memset(lst->data + lst->capacity, 0, lst->capacity * sizeof(int));
-    memset(lst->next + lst->capacity, FREE_SPOT, lst->capacity * sizeof(int));
+    memset(lst->node + lst->capacity, FREE_SPOT, lst->capacity * sizeof(ListNode));
 
     lst->capacity *= 2;
 
@@ -112,7 +89,7 @@ int ListAdd (List* lst, int index, int val) // add insert before
         return Error;
     }
 
-    if (lst->next[index] == FREE_SPOT && (lst->head != 0))
+    if ((lst->node[index].next == FREE_SPOT) && (lst->head != 0))
         return 0;
     //printf("adding after %d val %d\n", index, val);
 
@@ -124,26 +101,32 @@ int ListAdd (List* lst, int index, int val) // add insert before
         int Error = ResizeList(lst);
         if (Error)
             return Error;
-        freeIndex = FindFreeSpot(lst);
+        freeIndex = lst->capacity / 2;
     }
 
-    lst->data[freeIndex] = val;
+    lst->node[freeIndex].value = val;
 
     if (lst->head == 0)
     {
         lst->head = freeIndex;
-
-        if (lst->tail != 0)
-            return CORRUPTED_LIST;
-
-        lst->next[freeIndex] = 0;
         lst->tail = freeIndex;
+        
+        lst->node[freeIndex].next = 0;
+        lst->node[freeIndex].prev = 0;
 
         return freeIndex;
     }
 
-    lst->next[freeIndex] = lst->next[index];
-    lst->next[index] = freeIndex;
+
+    lst->node[freeIndex].next = lst->node[index].next;
+    lst->node[freeIndex].prev = index;
+    lst->node[index].next = freeIndex;
+
+    int next = lst->node[freeIndex].next;
+    int prev = lst->node[freeIndex].prev;
+
+    if (lst->node[next].prev != 0)
+        lst->node[next].prev = freeIndex;
 
     if (lst->tail == index)
         lst->tail = freeIndex;
@@ -162,29 +145,32 @@ int ListRemove (List* lst, int index)
         return Error;
     }
 
-    if (lst->next[index] == FREE_SPOT)
+    if ((lst->node[index].next == FREE_SPOT) || (lst->node[index].prev == FREE_SPOT))
         return 0;
+
+    int next = lst->node[index].next;
+    int prev = lst->node[index].prev;
 
     if (index == lst->head)
     {
-        lst->head = lst->next[index];
-        lst->next[index] = FREE_SPOT;
-
-        return OK;
+        lst->head = next;
+        //lst->node[next].prev = 0;
     }
-
-    int prev = FindPrevElem(lst, index); // remove
 
     if (index == lst->tail)
     {
         lst->tail = prev;
-        lst->next[index] = FREE_SPOT;
-        lst->next[prev] = 0;
-        return OK;
+        //lst->node[prev].next = 0;
     }
 
-    lst->next[prev] = lst->next[index];
-    lst->next[index] = FREE_SPOT;
+    if (lst->node[prev].next != 0)
+        lst->node[prev].next = lst->node[index].next;
+
+    if (lst->node[next].prev != 0)
+        lst->node[next].prev = lst->node[index].prev;
+
+    lst->node[index].next = FREE_SPOT;
+    lst->node[index].prev = FREE_SPOT;
 
     return OK;
 }
@@ -204,27 +190,29 @@ int ListDump (List* lst)
 
     printf("\nhead = %d, capacity - %zu, tail - %d\n", lst->head, lst->capacity, lst->tail);
 
-    if (Error == NULL_DATA_PTR)
+    if (Error == NULL_NODE_PTR)
         printf("Warning! Null data ptr!!\n");
     else
     {
         printf("data arr -->");
         for (int i = 0; i < lst->capacity; i++)
         {
-            printf("%3d ", lst->data[i]);
+            printf("%3d ", lst->node[i].value);
         }
-    }
 
-    if (Error == NULL_NEXT_PTR)
-        printf("Warning! Null next ptr!!\n");
-    else
-    {
         printf("\nnext arr -->");
         for (int i = 0; i < lst->capacity; i++)
         {
-            printf("%3d ", lst->next[i]);
+            printf("%3d ", lst->node[i].next);
+        }
+
+        printf("\nprev arr -->");
+        for (int i = 0; i < lst->capacity; i++)
+        {
+            printf("%3d ", lst->node[i].prev);
         }
     }
+
     if (Error == CYCLED_LIST)
         printf("Warning! There is an cycle in the next arr!");
     printf("\n\n");
@@ -237,11 +225,8 @@ int ListVerify (List* lst)
     if (lst == NULL)
         return NULL_LST_PTR;
 
-    if (lst->data == NULL)
-        return NULL_DATA_PTR;
-
-    if (lst->next == NULL)
-        return NULL_NEXT_PTR;
+    if (lst->node == NULL)
+        return NULL_NODE_PTR;
 
     if ( ((lst->head == 0) && (lst->tail != 0)) || ((lst->head != 0) && (lst->tail == 0)) )
         return INIT_ERROR;
@@ -257,14 +242,14 @@ int ListVerify (List* lst)
 
     for (jumpCounter = 0; (runThrough != lst->tail) && (jumpCounter < lst->capacity + 1); jumpCounter++)
     {
-        runThrough = lst->next[runThrough];
+        runThrough = lst->node[runThrough].next;
     }
     //printf("\n\nin vrctr: runthrough = %d, cyclind = %d, lst->tail = %d\n\n", runThrough, jumpCounter, lst->tail);
 
     if (jumpCounter == lst->capacity + 1)
         return CYCLED_LIST;
 
-    if (lst->next[runThrough] != 0)
+    if (lst->node[runThrough].next != 0)
         return TAIL_NOT_PROPER;
 
     return OK;
