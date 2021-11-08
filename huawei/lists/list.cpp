@@ -11,8 +11,16 @@ int ListCtor (List* lst, size_t capacity)
         return CANT_ALLOC_MEM;
 
     lst->head = lst->tail = 0;
-    memset(lst->node + 1, FREE_SPOT, (capacity - 1) * sizeof(ListNode));
     lst->capacity = capacity;
+    lst->free = 1;
+    memset(lst->node + 1, FREE_SPOT, (capacity - 1) * sizeof(ListNode));
+
+    for (int i = 1; i < capacity - 1; i++)
+    {
+        lst->node[i].next = i + 1;
+    }
+
+    lst->node[capacity - 1].next = 0;
 
     return OK;
 }
@@ -27,7 +35,7 @@ int ListDtor (List* lst)
         lst->node = NULL;
     }
 
-    lst->head = lst->tail = 0;
+    lst->head = lst->tail = lst->free =  0;
     lst->capacity = 0;
 
     return OK;
@@ -52,19 +60,6 @@ int LogicalToPhysical (List* lst, int logicalPlace)
     return physicalPlace;
 }
 
-int FindFreeSpot(List* lst)
-{
-    int freeIndex = 0;
-    for (freeIndex = 0; (freeIndex < lst->capacity) && (lst->node[freeIndex].next != FREE_SPOT); freeIndex++)
-    ;
-
-    if (freeIndex == lst->capacity)
-        return 0;
-
-    return freeIndex;
-}
-
-
 int ResizeList (List* lst)
 {
     ListNode* tmp = (ListNode*)realloc(lst->node, 2 * lst->capacity * sizeof(ListNode));
@@ -75,6 +70,13 @@ int ResizeList (List* lst)
 
     memset(lst->node + lst->capacity, FREE_SPOT, lst->capacity * sizeof(ListNode));
 
+    for (int i = lst->capacity; i < 2 * lst->capacity - 1; i++)
+    {
+        lst->node[i].next = i + 1;
+    }
+    lst->node[2 * lst->capacity - 1].next = 0;
+
+    lst->free = lst->capacity;
     lst->capacity *= 2;
 
     return OK;
@@ -93,9 +95,9 @@ int ListAdd (List* lst, int index, int val) // add insert before
         return 0;
     //printf("adding after %d val %d\n", index, val);
 
-    int freeIndex = FindFreeSpot(lst);
+    int freeIndex = lst->free;
 
-    printf("free spot - %d\n", freeIndex);
+    //printf("free spot - %d\n", freeIndex);
     if (freeIndex == 0)
     {
         int Error = ResizeList(lst);
@@ -103,6 +105,7 @@ int ListAdd (List* lst, int index, int val) // add insert before
             return Error;
         freeIndex = lst->capacity / 2;
     }
+    lst->free = lst->node[freeIndex].next;
 
     lst->node[freeIndex].value = val;
 
@@ -169,7 +172,8 @@ int ListRemove (List* lst, int index)
     if (lst->node[next].prev != 0)
         lst->node[next].prev = lst->node[index].prev;
 
-    lst->node[index].next = FREE_SPOT;
+    lst->node[index].next = lst->free;
+    lst->free = index;
     lst->node[index].prev = FREE_SPOT;
 
     return OK;
@@ -184,16 +188,20 @@ int ListDump (List* lst)
     if (Error == NULL_CAP)
         printf("Warning! Capacity of zero\n");
     if (Error == INIT_ERROR)
-        printf("Warning! The head an tail are corrupted!");
+        printf("Warning! The head an tail are corrupted!\n");
+    if (Error == HEAD_NOT_PROPER)
+        printf("Warning! There is an element before the one called the head!\n");
     if (Error == TAIL_NOT_PROPER)
-        printf("Warning! There is an element after the one called the tail!");
+        printf("Warning! There is an element after the one called the tail!\n");
 
-    printf("\nhead = %d, capacity - %zu, tail - %d\n", lst->head, lst->capacity, lst->tail);
+    printf("\nhead = %d, capacity - %zu, free - %d, tail - %d\n", lst->head, lst->capacity, lst->free, lst->tail);
 
     if (Error == NULL_NODE_PTR)
         printf("Warning! Null data ptr!!\n");
     else
     {
+        if (Error == UNLINKED_LIST)
+            printf("Warning! There is a dislinked place in the list!\n");
         printf("data arr -->");
         for (int i = 0; i < lst->capacity; i++)
         {
@@ -214,7 +222,7 @@ int ListDump (List* lst)
     }
 
     if (Error == CYCLED_LIST)
-        printf("Warning! There is an cycle in the next arr!");
+        printf("Warning! There is an cycle in the next arr!\n");
     printf("\n\n");
 
     return OK;
@@ -238,11 +246,23 @@ int ListVerify (List* lst)
         return OK;
 
     int runThrough = lst->head;
-    int jumpCounter = 0;
+    if (lst->node[runThrough].prev != 0)
+        return HEAD_NOT_PROPER;
 
+    int jumpCounter = 0;
     for (jumpCounter = 0; (runThrough != lst->tail) && (jumpCounter < lst->capacity + 1); jumpCounter++)
     {
         runThrough = lst->node[runThrough].next;
+
+        int next = lst->node[runThrough].next;
+        int prev = lst->node[runThrough].prev;
+
+        if (((runThrough != lst->node[next].prev) && (next != 0))  || ((runThrough != lst->node[prev].next) && (prev != 0)))
+        {
+            // printf("Dislinked place: runThrogh - %d, next.prev - %d, prev.next - %D\n", runThrough, lst->node[next].prev, lst->node[next].prev);
+            // printf("values: current - %d, next - %d, prev - %d\n", lst->node[runThrough].value, lst->node[next].value, lst->node[prev].value);
+            return UNLINKED_LIST;
+        }
     }
     //printf("\n\nin vrctr: runthrough = %d, cyclind = %d, lst->tail = %d\n\n", runThrough, jumpCounter, lst->tail);
 
