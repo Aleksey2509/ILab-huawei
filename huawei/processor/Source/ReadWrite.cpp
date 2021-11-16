@@ -1,5 +1,5 @@
-#include "struct.hpp"
-#include "ReadWrite.hpp"
+#include "../Headers/struct.hpp"
+#include "../Headers/ReadWrite.hpp"
 
 //------------------------------------------------------------------------------------------------------------------------------
 
@@ -13,16 +13,16 @@ int TEXT_ReadFromFile(TEXT* text, const char* FileName)
 
     Error = TEXT_Parcer(text);
 
-    return Error; // if everything is alright after parcer, the Error will be set to state OK = 0
+    return Error;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 
 int TEXT_Parcer (TEXT* text)
 {
-    size_t AllocedMemory = MAX_INPUT_LINES * sizeof(line_t); // just num of lines
+    size_t allocatedLines = MAX_INPUT_LINES;
 
-    text->lines = (line_t *) calloc(MAX_INPUT_LINES, sizeof(line_t)); // use AllocatedMemory?
+    text->lines = (line_t *) calloc(allocatedLines, sizeof(line_t));
     if ( !text->lines )
         return NOT_ENGH_MEM;
 
@@ -35,14 +35,17 @@ int TEXT_Parcer (TEXT* text)
         text->lines[text->nLines].line = (text->buffer + i);
         text->lines[text->nLines].lineLen = len;
 
-        i += text->lines[text->nLines].lineLen; // len
+        i += len; // len
         text->nLines++;
 
-        if (text->nLines > (AllocedMemory / sizeof(line_t)))
+        if (text->nLines > (allocatedLines))
         {
-            text->lines = ReallocLineArr(text->lines, &AllocedMemory); // just add code
-            if (!text->lines)
+            line_t* tmp = (line_t*)realloc(text->lines, 2 * allocatedLines * sizeof(line_t));
+            if (!tmp)
                 return NOT_ENGH_MEM;
+            text->lines = tmp;
+            
+            allocatedLines *= 2;
         }
         
     }
@@ -91,7 +94,8 @@ int PrintTextStdout(TEXT* text)
 {
     for (int i = 0; i < text->nLines; i++)
     {
-        PrintLineToFile(text->lines + i, stdout); // use fputline
+        fwrite(text->lines->line, sizeof(char), text->lines->lineLen, stdout);
+        fputc('\n', stdout);
     }
     return 0;
 }
@@ -114,43 +118,36 @@ int PrintTextToFile (const char* path, const TEXT* text)
 
 	for(int i = 0; i < text->nLines; i++)
 	{
-        PrintLineToFile(text->lines + i, file);
+        fwrite(text->lines->line, sizeof(char), text->lines->lineLen, file);
+        fputc('\n', file);
     }
     fclose(file);
 
     return 0;
 
 }
-//------------------------------------------------------------------------------------------------------------------------------
-
-int PrintLineToFile(const line_t* str, FILE* stream) // look for std function
-{
-    fwrite(str->line, sizeof(char), str->lineLen, stream);
-    fwrite("\n", sizeof(char), 1, stream); // fputc(...)
-
-    return 0;
-}
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-const char* TEXT_GetError (int Error) // strerror?
+const char* TEXT_GetError (int Error)
 {
     switch (Error)
         {
-            case OK:               return ErrStrPtr[1];
+            case OK:               return "No error\n";
 
-            case CANT_ALLOC_BUF:   return ErrStrPtr[2];
+            case CANT_ALLOC_BUF:   return "Your file is too big\n";
 
-            case NULL_FL:          return ErrStrPtr[3];
+            case NULL_FL:          return "Bad file pointer\n";
 
-            case NULL_TEXT_PTR:    return ErrStrPtr[4];
+            case NULL_TEXT_PTR:    return "Null text ptr\n";
 
-            case NOT_ENGH_MEM:     return ErrStrPtr[5];
+            case NOT_ENGH_MEM:     return "Not enough memory for line memory allocation\n";
 
-            case CANT_GET_FL_INFO: return ErrStrPtr[6];
+            case CANT_GET_FL_INFO: return "Could not get file info\n";
 
-            default:               return ErrStrPtr[0];
+            default:               return "Unknown error\n";
         }
+
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
@@ -161,16 +158,6 @@ size_t mystrlen(const char* string)
     for (len = 0; (string[len] != '\n') && (string[len] != '\0') ; len++)
     ;
     return len;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------
-
-line_t* ReallocLineArr (line_t* lines, unsigned int* AllocedMemory) // deprecate?
-{
-    *AllocedMemory *= MULT_CONST;
-    lines = (line_t*)realloc(lines, *AllocedMemory);
-
-    return lines;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------

@@ -1,3 +1,6 @@
+#ifndef COMPARE_HPP
+#define COMPARE_HPP
+
 /*! 
  *\brief This function compares strings from the beginning 
  *
@@ -44,3 +47,5 @@ void VoidMemSwap (void* arg1, void* arg2, unsigned int DataSize);
  * take more than 1024 bytes the behaviour is undefined
  */
 void Myqsort (void* base, size_t nElem, size_t elemSize, int (*comparator)(const void *, const void *));
+
+#endif

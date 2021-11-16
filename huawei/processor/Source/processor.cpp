@@ -1,8 +1,8 @@
 #include <stdarg.h>
-#include "struct.hpp"
-#include "ReadWrite.hpp"
-#include "stack.hpp"
-#include "processor.hpp"
+#include "../Headers/struct.hpp"
+#include "../Headers/ReadWrite.hpp"
+#include "../Headers/stack.hpp"
+#include "../Headers/processor.hpp"
 
 #define ErrorToLog(Error) \
 {\
@@ -21,11 +21,11 @@ struct Processor
 
 };
 
-int process (Stack* stack, const char* CodeBuf);
+int process (Processor* processor);
 int CreateBuffer(const char* FileName, char** Buffer);
 
 int push(Stack* stack, int a);
-int pop(Stack* stack);
+int pop(Stack* stack, elem_t* dst = 0);
 int add(Stack* stack);
 int sub(Stack* stack);
 int mul(Stack* stack);
@@ -38,7 +38,7 @@ void dmp(Stack* stack);
 
 int main(int argc, char* argv[])
 {
-    Processor processor = {};
+    Processor processor {};
 
     int Error = CreateBuffer(argv[1], &(processor.codeArr));
     if (Error)
@@ -49,12 +49,17 @@ int main(int argc, char* argv[])
 
     // for (int i = 0; i < 10; i++)
     // {
-    //     printf("%d ", CodeBuf[i]);
+    //     printf("%d ", codeBuf[i]);
     // }
 
     StackCtor(&(processor.stack), 20);
 
-    Error = process(&processor.stack, processor.codeArr);
+    for (int i = 0; i < 4; i++)
+    {
+        processor.reg[i] = i + 1;
+    }
+
+    Error = process(&processor);
     free(processor.codeArr);
     StackDtor(&processor.stack);
 
@@ -63,22 +68,49 @@ int main(int argc, char* argv[])
 
 
 
-int process (Stack* stack, const char* CodeBuf)
+int process (Processor* processor)
 {
+    Stack* stack = &processor->stack;
+    const char* codeBuf = processor->codeArr;
     int Error = 0;
     int ip = 0;
+    int type = 0;
+    int arg = 0;
+    int cmd = 0;
 
     while(1)
     {
-        //printf("\n\nin cycle: Codebuf[%d] = %d\n\n", ip, CodeBuf[ip]);
-        switch(CodeBuf[ip])
+        //printf("\n\nin cycle: codebuf[%d] = %d\n\n", ip, codeBuf[ip]);
+        cmd = codeBuf[ip] & 0x1F;
+        printf("%d, ip - %d\n", cmd, ip);
+        switch(cmd)
         {
-            case CMD_PUSH: push(stack, *(int*)(CodeBuf + ip + 1));
-                        ip += sizeof(char) + sizeof(int);
+            case CMD_PUSH:
+                        type = codeBuf[ip];
+                        if (type & 0x20)
+                        {
+                            arg += *(elem_t*)(codeBuf + ip + 1);
+                            ip += sizeof(elem_t);
+                        }
+                        if (type & 0x40)
+                        {
+                            arg += processor->reg[codeBuf[ip += 1] - 1];
+                        }
+                        ip += 1;
+                        push(stack, arg);
+                        arg = 0;
                         break;
 
-            case CMD_POP: pop(stack);
+            case CMD_POP:
+                        pop(stack);
+                        type = codeBuf[ip];
+                        if (type & 0x40)
+                        {
+                            arg += processor->reg[codeBuf[ip += 1] - 1];
+                        }
                         ip += 1;
+                        pop (stack, &arg);
+                        arg = 0;
                         break;
 
             case CMD_ADD: add(stack);
@@ -161,18 +193,18 @@ int CreateBuffer(const char* FileName, char** Buffer)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-int push(Stack* stack, int a)
+int push(Stack* stack, elem_t a)
 {
-    int Error = StackPush(stack, &a);
+    int Error = StackPush(stack, a);
     
     return Error;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-int pop(Stack* stack)
+int pop(Stack* stack, elem_t* dst)
 {
-    int Error = StackPop(stack);
+    int Error = StackPop(stack, dst);
     
     return Error;
 }
@@ -192,7 +224,7 @@ int add(Stack* stack)
 
     int result = a + b;
 
-    Error = StackPush(stack, &result);
+    Error = StackPush(stack, result);
     TrackError(Error);
 
     return result;
@@ -213,7 +245,7 @@ int sub(Stack* stack)
 
     int result = b - a;
 
-    Error = StackPush(stack, &result);
+    Error = StackPush(stack, result);
     TrackError(Error);
 
     return GOOD;
@@ -234,7 +266,7 @@ int mul(Stack* stack)
 
     int result = a * b;
 
-    Error = StackPush(stack, &result);
+    Error = StackPush(stack, result);
     TrackError(Error);
 
     return result;
@@ -258,7 +290,7 @@ int div(Stack* stack)
 
     int result = a / b;
 
-    Error = StackPush(stack, &result);
+    Error = StackPush(stack, result);
     TrackError(Error);
 
     return result;
@@ -287,4 +319,3 @@ void dmp(Stack* stack)
 {
     StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__);
 }
-

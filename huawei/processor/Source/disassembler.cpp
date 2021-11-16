@@ -1,8 +1,8 @@
 #include <stdarg.h>
-#include "struct.hpp"
-#include "ReadWrite.hpp"
-#include "stack.hpp"
-#include "processor.hpp"
+#include "../Headers/struct.hpp"
+#include "../Headers/ReadWrite.hpp"
+#include "../Headers/stack.hpp"
+#include "../Headers/processor.hpp"
 
 #define ErrorToLog(Error) \
 {\

@@ -3,20 +3,10 @@
 #ifndef READWRITE_HPP_INCL
 #define READWRITE_HPP_INCL
 
-// Code goes here
-
-#endif // #ifndef READWRITE_HPP_INCL
-
 static const int MAX_INPUT_LINES = 10000;
 static const int MAX_LINE_LENGTH = 4096;
 
-// comments and enum?
-static const int REDUCE  = -5;
-static const int ENLARGE = -4; 
-
-// static const int MULT_CONST = 2;
-
-enum ERROR_CODES
+enum ErrorCodes
 {
     NULL_FL = -1000,
     CANT_ALLOC_BUF,
@@ -24,7 +14,7 @@ enum ERROR_CODES
     NULL_TEXT_PTR,
     NOT_ENGH_MEM,
     RESIZE_ERR,
-    OK = 0
+    OK
 };
 
 const char ErrStrPtr [][100] = {"Unknown error\n",
@@ -130,3 +120,6 @@ size_t mystrlen(const char* string);
  * \brief This function free the memory aloocated for TEXT structure, if it was not free'd before
  */
 int TEXT_Destroy (TEXT* text);
+
+
+#endif

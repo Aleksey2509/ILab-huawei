@@ -1,7 +1,13 @@
 struct Signature
 {
-    int Sign;
-    int Version;
+    int sign;
+    int version;
+};
+
+struct Label
+{
+    int address;
+    char* name;
 };
 
 
@@ -16,5 +22,6 @@ enum Commands
     CMD_DIV,
     CMD_OUT,
     CMD_VER,
-    CMD_DMP
+    CMD_DMP,
+    CMD_JMP
 };

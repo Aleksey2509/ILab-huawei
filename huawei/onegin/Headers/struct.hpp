@@ -1,3 +1,6 @@
+#ifndef STRUCT_HPP
+#define STRUCT_HPP
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,3 +22,5 @@ struct TEXT
     line_t* lines = 0;
     int nLines = 0;
 };
+
+#endif

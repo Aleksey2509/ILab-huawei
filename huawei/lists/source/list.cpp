@@ -36,7 +36,7 @@ int ListDtor (List* lst)
         lst->node = NULL;
     }
 
-    lst->head = lst->tail = lst->free =  0;
+    lst->head = lst->tail = lst->free = 0;
     lst->capacity = 0;
 
     return OK;
