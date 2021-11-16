@@ -2,6 +2,8 @@
 
 extern FILE* logfile;
 
+const int POISON = -100;
+
 int ElemDump(elem_t* ptr)
 {
     fprintf(logfile, "%d", *(int*)ptr);
@@ -22,7 +24,7 @@ int main()
 
     for (int i = 0; i < sizeof(valArr)/sizeof(int); i++)
     {
-        StackPush(&test, valArr + i);
+        StackPush(&test, valArr[i]);
         StackDump(&test, __FILE__, __LINE__, __PRETTY_FUNCTION__);
     }
 

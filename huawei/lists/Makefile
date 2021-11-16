@@ -2,17 +2,29 @@ CXX = g++
 CPPFLAGS = -std=c++11
 OBJL = objfiles
 EXECL = executables
-OBJ = $(OBJL)/list.o
+HEADL = headers
+SRC = source
+OBJ = $(OBJL)/list.o $(OBJL)/sortlist.o
 
-$(OBJL)/%.o: %.cpp 
-	$(CXX) $(CPPFLAGS) -c -o $@ $^
+$(OBJL)/%.o: $(SRC)/%.cpp 
+	$(CXX) $(CPPFLAGS) -c -o $@ $<
 
-all: CompileStack
+all: CompileList
 
-CompileStack: $(OBJ)
+CompileList: $(OBJ) 
 
 test: $(OBJL)/test.o $(OBJ)
 	$(CXX) $(CPPFLAGS) -o $(EXECL)/test $(OBJ) $(OBJL)/test.o
 	$(EXECL)/test
 
-$(OBJL)/test.o: test.cpp
+graph: $(OBJL)/graphicdump.o $(OBJ)
+	$(CXX) $(CPPFLAGS) -o $(EXECL)/graph $(OBJ) $(OBJL)/graphicdump.o
+	$(EXECL)/graph
+
+$(OBJL)/test.o: $(SRC)/test.cpp $(HEADL)/sortlist.hpp
+
+$(OBJL)/graphicdump.o: $(SRC)/graphicdump.cpp
+
+$(OBJL)/list.o: $(SRC)/list.cpp $(HEADL)/list.hpp
+
+$(OBJL)/sortlist.o: $(SRC)/sortlist.cpp

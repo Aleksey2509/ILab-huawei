@@ -2,6 +2,8 @@
 
 extern FILE* logfile;
 
+const int POISON = -100;
+
 int ElemDump(elem_t* ptr)
 {
     fprintf(logfile, "%d", *(int*)ptr);
@@ -10,16 +12,16 @@ int ElemDump(elem_t* ptr)
 
 int main()
 {
-    Stack test = {};
+    Stack test {};
     int capacity = 20;
     int valArr[4] = {120, 121, 122, 123};
 
     StackCtor(&test, capacity);
-    //StackDump(&test, __FILE__, __LINE__, __PRETTY_FUNCTION__);
+    StackDump(&test, __FILE__, __LINE__, __PRETTY_FUNCTION__);
 
     //StackDump(&test, __FILE__, __LINE__, __PRETTY_FUNCTION__);
 
-    StackPush(&test, (valArr + 1));
+    StackPush(&test, valArr[1]);
     StackDump(&test, __FILE__, __LINE__, __PRETTY_FUNCTION__);
 
     StackPop(&test);

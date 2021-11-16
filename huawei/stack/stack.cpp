@@ -24,9 +24,7 @@ hash_t GetStackHash (const Stack* stack)
 {
     size_t byteLen = sizeof(Stack) - 2 * sizeof(hash_t);
     #if CNRY_DEF
-    {
-        byteLen -= 2 * sizeof(canary_t);
-    }
+    byteLen -= 2 * sizeof(canary_t);
     #endif
 
     hash_t StackHash = Hash(stack, byteLen, prime);
@@ -48,19 +46,38 @@ hash_t GetDataHash (const Stack* stack)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-char* GetUserError (int Error)
+void FillPoison (elem_t data[], size_t size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        data[i] = POISON;
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+const char* GetUserError (int Error)
 {
     switch (Error)
     {
-        case NULL_SRC_PTR:   return UserErrors[1];
+        case NULL_SRC_PTR:   return "WARNING! User tried to push, but did not give a valid pointer\n\n";
 
-        case NOTHING_TO_POP: return UserErrors[2];
+        case NOTHING_TO_POP: return "WARNING! User tried to pop from an empty stack\n\n";
 
-        case NOT_RESIZABLE:  return UserErrors[3];
+        case NOT_RESIZABLE:  return "WARNING! User tried to push to a full stack, which could not be resized\n\n";
 
-        case USE_AFTER_DESTRUCT: return UserErrors[4];
+        case USE_AFTER_DESTRUCT: return "WARNING! WARNING! The stack is being used after it's destruction!!! Futher use could lead to segmentation fault!!!\n\n";
 
-        default: return UserErrors[0];
+        case POP_FROM_POISONED: return "WARNING! User tried to pop from poisoned area\n\n";
+
+        default: return "There is either a error with stack or stackDump was given unknown error code\n\n";
+
+        // "There is either a error with stack or stackDump was given unknown error code\n\n",
+        //                           "WARNING! User tried to push, but did not give a valid pointer\n\n", 
+        //                           "WARNING! User tried to pop from an empty stack\n\n",
+        //                           "WARNING! User tried to push to a full stack, which could not be resized\n\n",
+        //                           "WARNING! WARNING! The stack is being used after it's destruction!!! Futher use could lead to segmentation fault!!!\n\n",
+        //                           "WARNING! User tried to pop from poisoned area\n\n"
     }
 }
 
@@ -82,13 +99,11 @@ int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, co
     }
 
     #if CNRY_DEF
-    {
-        elem_t* ActualStackPtr = (elem_t*)calloc(1, capacity * sizeof(elem_t) + 2 * sizeof(canary_t));
+    elem_t* ActualStackPtr = (elem_t*)calloc(1, capacity * sizeof(elem_t) + 2 * sizeof(canary_t));
 
-        stack->data = (elem_t*)((char*)ActualStackPtr + sizeof(canary_t));
-    }
+    stack->data = (elem_t*)((char*)ActualStackPtr + sizeof(canary_t));
     #else 
-        stack->data = (elem_t* )calloc(capacity, sizeof(elem_t));
+    stack->data = (elem_t* )calloc(capacity, sizeof(elem_t));
     #endif
 
     stack->size = 0;
@@ -98,21 +113,19 @@ int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, co
     stack->PlaceCrtd.FuncName = FuncName;
     stack->PlaceCrtd.LineNum = LineNum;
 
-    #if CNRY_DEF
-    {
-        stack->LeftCanary = STK_CANARY_VAL;
-        stack->RightCanary = STK_CANARY_VAL;
+    FillPoison(stack->data, capacity);
 
-        ((canary_t*)stack->data)[-1] = DATA_CANARY_VAL;
-        *(canary_t*)(stack->data + stack->capacity) = DATA_CANARY_VAL;
-    }
+    #if CNRY_DEF
+    stack->LeftCanary = STK_CANARY_VAL;
+    stack->RightCanary = STK_CANARY_VAL;
+
+    ((canary_t*)stack->data)[-1] = DATA_CANARY_VAL;
+    *(canary_t*)(stack->data + stack->capacity) = DATA_CANARY_VAL;
     #endif
 
     #if HASH_DEF
-    {
-        stack->StackHash = GetStackHash(stack);
-        stack->DataHash  = GetDataHash(stack);
-    }
+    stack->StackHash = GetStackHash(stack);
+    stack->DataHash  = GetDataHash(stack);
     #endif
 
     //printf("IN CTOR: LeftCanary = %lX, RightCanary = %lX\n", ((canary_t*)stack->data)[-1], *(canary_t*)((char*)stack->data + stack->capacity * stack->DataSize));
@@ -141,9 +154,10 @@ int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, i
     #endif
 
     #if CNRY_DEF
-        free( ((char*)stack->data - sizeof(canary_t)) );
+    free( ((char*)stack->data - sizeof(canary_t)) );
+
     #else 
-        free(stack->data);
+    free(stack->data);
     #endif
 
     stack->size = -1;
@@ -152,7 +166,7 @@ int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, i
     stack->PlaceCrtd.FuncName = (char*) BAD_POINTER;
     stack->PlaceCrtd.LineNum = -1;
 
-    stack->data = (elem_t* ) BAD_POINTER;
+    stack->data = BAD_POINTER;
 
     return 0;
 }
@@ -160,7 +174,7 @@ int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, i
 //------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------
 
-int StackPush(Stack* stack, elem_t* src)
+int StackPush(Stack* stack, elem_t src)
 {
     int Error = 0;
     #if VRFCTR_DEF
@@ -168,19 +182,13 @@ int StackPush(Stack* stack, elem_t* src)
     TrackError(Error);
     #endif
 
-    if (src == 0)
-    {
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, NULL_SRC_PTR);
-        return NULL_SRC_PTR;
-    }
-
     if (stack->size == stack->capacity)
     {
         Error = StackResize (stack, ENLARGE);
         TrackError(Error);
     }
 
-    (stack->data)[stack->size] = *src;
+    (stack->data)[stack->size] = src;
 
     stack->size++;
 
@@ -209,7 +217,13 @@ int StackPop(Stack* stack, elem_t* dst)
         return NOTHING_TO_POP;
     }
 
-    if ( (stack->size < (stack->capacity / 2) - 1 ) )
+    if (stack->data[stack->size - 1] == POISON)
+    {
+        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, POP_FROM_POISONED);
+        return POP_FROM_POISONED;
+    }
+
+    if ( stack->size < ((stack->capacity / 2) - 1)  )
     {
         //printf("Starting reducing\n");
         Error = StackResize(stack, REDUCE);
@@ -221,6 +235,7 @@ int StackPop(Stack* stack, elem_t* dst)
         *dst = stack->data[stack->size - 1];
     }
 
+    stack->data[stack->size - 1] = POISON;
     stack->size--;
 
     #if HASH_DEF
@@ -254,30 +269,27 @@ int StackResize (Stack* stack, int mode, size_t NewSize)
     }
 
     #if CNRY_DEF
-    {
-        elem_t* tmp = (elem_t*)realloc((char*)stack->data - sizeof(canary_t), NewSize + 2 * sizeof(canary_t));
-        if(tmp == 0)
-            return NOT_RESIZABLE;
-        stack->data = (elem_t*)((char*)tmp + sizeof(canary_t));
 
-        ((canary_t*)stack->data)[-1] = DATA_CANARY_VAL;
-        *((canary_t*)( ( stack->data + NewSize / sizeof(elem_t) ))) = DATA_CANARY_VAL;
+    elem_t* tmp = (elem_t*)realloc((char*)stack->data - sizeof(canary_t), NewSize + 2 * sizeof(canary_t));
+    if(tmp == 0)
+        return NOT_RESIZABLE;
+    stack->data = (elem_t*)((char*)tmp + sizeof(canary_t));
 
-        //printf("char + ... = %p, stack + ... = %p\n",(char*)stack->data + NewSize, stack->data + NewSize/sizeof(elem_t));
-       
-    }
+    ((canary_t*)stack->data)[-1] = DATA_CANARY_VAL;
+    *((canary_t*)( ( stack->data + NewSize / sizeof(elem_t) ))) = DATA_CANARY_VAL;
 
+    //printf("char + ... = %p, stack + ... = %p\n",(char*)stack->data + NewSize, stack->data + NewSize/sizeof(elem_t));
     #else
-    {
-        void* tmp = realloc(stack->data, NewSize);
-        if(tmp == 0)
-            return NOT_RESIZABLE;
+    void* tmp = realloc(stack->data, NewSize);
+    if(tmp == 0)
+        return NOT_RESIZABLE;
 
-        stack->data = (elem_t*)tmp;
-    }
+    stack->data = (elem_t*)tmp;
     #endif
 
     stack->capacity = NewSize / sizeof(elem_t);
+
+    FillPoison(stack->data + stack->size, stack->capacity - stack->size);
 
     #if HASH_DEF
     stack->StackHash = GetStackHash(stack);
@@ -350,49 +362,60 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     fflush(logfile);
 
     #if CNRY_DEF
-    {
-        if (StackError & DATA_CANARY_DMG)
-        {
-            fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", StackErrors[4], DATA_CANARY_VAL, DATA_CANARY_VAL);
-        }
-        fprintf(logfile, "Canaries around data: Left Canary - %lX, RightCanary - %lX\n\n", ((canary_t*)stack->data)[-1], 
-                                                    *(canary_t*)(stack->data + stack->capacity) );
 
-        if (StackError & STK_CANARY_DMG)
-        {
-            fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", StackErrors[5], STK_CANARY_VAL, STK_CANARY_VAL);
-        }
-        fprintf(logfile, "Canaries around stack: Left Canary - %lX, RightCanary - %lX\n\n", stack->LeftCanary, stack->RightCanary);
+    if (StackError & DATA_CANARY_DMG)
+    {
+        fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", StackErrors[4], DATA_CANARY_VAL, DATA_CANARY_VAL);
     }
+    fprintf(logfile, "Canaries around data: Left Canary - %lX, RightCanary - %lX\n\n", ((canary_t*)stack->data)[-1], 
+                                                *(canary_t*)(stack->data + stack->capacity) );
+
+    if (StackError & STK_CANARY_DMG)
+    {
+        fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", StackErrors[5], STK_CANARY_VAL, STK_CANARY_VAL);
+    }
+    fprintf(logfile, "Canaries around stack: Left Canary - %lX, RightCanary - %lX\n\n", stack->LeftCanary, stack->RightCanary);
+
     #endif
 
     #if HASH_DEF
-    {
-       if (StackError & STK_HASH_ERR)
-       {
-           fprintf (logfile, "%s", StackErrors[6]);
-       }
 
-       if (StackError & DATA_HASH_ERR)
-       {
-           fprintf (logfile, "%s", StackErrors[7]);
-       }
+    if (StackError & STK_HASH_ERR)
+    {
+        fprintf (logfile, "%s", StackErrors[6]);
     }
+
+    if (StackError & DATA_HASH_ERR)
+    {
+        fprintf (logfile, "%s", StackErrors[7]);
+    }
+
     #endif
 
     fprintf(logfile, "dataptr = %p\n", stack->data);
     for (int i = 0; i < stack->size; i++)
     {
-        fprintf(logfile, "data[%d]: ", i);
+        fprintf(logfile, "data[%3d]: ", i);
         ElemDump(stack->data + i);
+        if (stack->data[i] == POISON)
+            fprintf(logfile, "     <------ WARNING!!! This is very strange. This area is concedered as containing usefull data, but this is poisoned\n");
         fprintf(logfile, "\n");
     }
-    // for (int i = stack->size; i < stack->capacity; i++)
-    // {
-    //     fprintf(logfile, "data[%d]: ", i);
-    //     ElemDump(stack->data + i);
-    //     fprintf(logfile, "(POISON)\n");
-    // }
+
+    #if FULL_DATA_PRINT
+    fprintf(logfile, "\n-----------Futher area not used-----------\n\n");
+
+    for (int i = stack->size; i < stack->capacity; i++)
+    {
+        fprintf(logfile, "data[%3d]: ", i);
+        ElemDump(stack->data + i);
+        if (stack->data[i] == POISON)
+            fprintf(logfile, "   (POISON)\n");
+        else
+            fprintf(logfile, "     <------ WARNING!!! This is very strange. This area is concedered as containing only poison, but this is something different\n");
+    }
+    #endif
+
     #endif
 
     fprintf(logfile, "%s%s\n\n", LowerBorder, LowerBorder);
@@ -428,7 +451,7 @@ int VerifyStack (const Stack* stack, const char* FileName, const char* FuncName,
         }
     }
 
-    if ((elem_t*)stack->data == (elem_t*) BAD_POINTER || stack->PlaceCrtd.FileName == (char*) BAD_POINTER || stack->PlaceCrtd.FuncName == (char*) BAD_POINTER)
+    if ((stack->data == BAD_POINTER) || (stack->PlaceCrtd.FileName == (char*) BAD_POINTER) || (stack->PlaceCrtd.FuncName == (char*) BAD_POINTER))
         return USE_AFTER_DESTRUCT;
 
     #if CNRY_DEF
@@ -445,15 +468,13 @@ int VerifyStack (const Stack* stack, const char* FileName, const char* FuncName,
     #endif
 
     #if HASH_DEF
-    {
-        hash_t stackHash = GetStackHash(stack);
-        if (stackHash != stack->StackHash)
-            Error |= STK_HASH_ERR;
+    hash_t stackHash = GetStackHash(stack);
+    if (stackHash != stack->StackHash)
+        Error |= STK_HASH_ERR;
 
-        hash_t dataHash = GetDataHash(stack);
-        if (dataHash != stack->DataHash)
-            Error |= DATA_HASH_ERR;
-    }
+    hash_t dataHash = GetDataHash(stack);
+    if (dataHash != stack->DataHash)
+        Error |= DATA_HASH_ERR;
     #endif
 
     return Error;

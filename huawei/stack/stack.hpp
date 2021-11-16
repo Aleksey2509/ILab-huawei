@@ -1,3 +1,7 @@
+#ifndef STACK_HPP
+
+#define STACK_HPP
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +14,8 @@
 #include "config.h"
 
 typedef int elem_t;
+
+extern const elem_t POISON;
 
 static char UpperBorder[] = "//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\";
 static char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\///**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\";
@@ -42,21 +48,21 @@ typedef long unsigned hash_t;
 const canary_t DATA_CANARY_VAL =  0xBAD00BAD;
 const canary_t STK_CANARY_VAL  =  0xDED00DED;
 
-static const int BAD_POINTER = 13; // static const elem_t* BAD_PTR = 13;
+static elem_t* BAD_POINTER = (elem_t*)13;
 static const int MULT_CONST = 2;
 static const int ENLARGE = 1;
 static const int REDUCE = -1;
 
-enum ErrorMasks // crit errors - positive codes
+enum CritErrorMasks // crit errors - positive codes
 {
-    NULL_STK_PTR    = 0x10000000, // 4000
-    NOT_INIT        = 0x01000000, // 2000
-    NULL_DATA_PTR   = 0x00100000, // 1000
-    CAP_LESS_SIZE   = 0x00010000,
-    STK_CANARY_DMG  = 0x00001000,
-    DATA_CANARY_DMG = 0x00000100,
-    STK_HASH_ERR    = 0x00000010,
-    DATA_HASH_ERR   = 0x00000001,
+    NULL_STK_PTR    = 0x80, // 4000
+    NOT_INIT        = 0x40, // 2000
+    NULL_DATA_PTR   = 0x20, // 1000
+    CAP_LESS_SIZE   = 0x10,
+    STK_CANARY_DMG  = 0x08,
+    DATA_CANARY_DMG = 0x04,
+    STK_HASH_ERR    = 0x02,
+    DATA_HASH_ERR   = 0x01,
     OK = 0
 };
 
@@ -65,7 +71,8 @@ enum UserError // not crit errors
     NULL_SRC_PTR = -1000,
     NOT_RESIZABLE,
     NOTHING_TO_POP,
-    USE_AFTER_DESTRUCT
+    USE_AFTER_DESTRUCT,
+    POP_FROM_POISONED
 };
 
 struct CallPlace
@@ -75,7 +82,7 @@ struct CallPlace
     long int LineNum = 0;
 };
 
-struct Stack // add debug mode in stack
+struct Stack
 {
     #if CNRY_DEF
     canary_t LeftCanary = 0;
@@ -99,12 +106,6 @@ struct Stack // add debug mode in stack
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-static char UserErrors [][150] = {"There is either a error with stack or stackDump was given unknown error code\n",
-                                  "Tried to push, but did not give a valid pointer\n", 
-                                  "Tried to pop from an empty stack\n",
-                                  "Tried to push to a full stack, which could not be resized\n",
-                                  "WARNING! WARNING! The stack is being used after it's destruction!!! Futher use could lead to segmentation fault!!!\n"};
-
 static char StackErrors [][200] = {"Stack not properly initialized (has a null ptr)\n",
                                    "Warning! Stack not initialized \n",
                                    "ERROR! Capacity is less than size:\n",
@@ -116,10 +117,13 @@ static char StackErrors [][200] = {"Stack not properly initialized (has a null p
 
 int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, const char* FuncName, int LineNum);
 int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, int LineNum);
-int StackPush(Stack* stack, elem_t* src);
+int StackPush(Stack* stack, elem_t src);
 int StackPop(Stack* stack, elem_t* dst = 0);
 int StackResize (Stack* stack, int mode, size_t NewSize = 0);
-char* GetUserError (int Error);
+const char* GetUserError (int Error);
 extern int ElemDump(elem_t* dataptr);
 int StackDump (const Stack* stack, const char* FileName, int LineNum, const char* FuncName, int UserError = 0, const char reason[] = "Just to check");
 int VerifyStack (const Stack* stack, const char* FileName, const char* FuncName, int LineNum);
+
+
+#endif

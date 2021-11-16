@@ -8,38 +8,30 @@ TESTL = tests
 $(OBJL)/%.o: $(TESTL)/%.cpp 
 	$(CXX) $(CPPFLAGS) -c -o $@ $^
 
-$(OBJL)/%.o: %.cpp 
-	$(CXX) $(CPPFLAGS) -c -o $@ $^
+%:$(OBJ) $(OBJL)/%.o
+	$(CXX) $(CPPFLAGS) -o $(EXECL)/$@ $^
+	$(EXECL)/$@
 
-all: compile
+all: CompileStack
 
-compile: $(OBJ)
+CompileStack: $(OBJ)
 
 PopEmpty: $(OBJ) $(OBJL)/PopEmpty.o
-	$(CXX) $(CPPFLAGS) -o $(EXECL)/PopEmpty $(OBJL)/PopEmpty.o $(OBJ) 
-	$(EXECL)/PopEmpty
 
 TwiceDestr: $(OBJ) $(OBJL)/TwiceDestr.o
-	$(CXX) $(CPPFLAGS) -o $(EXECL)/TwiceDestr $(OBJL)/TwiceDestr.o $(OBJ) 
-	$(EXECL)/TwiceDestr
 
 Annihilate: $(OBJ) $(OBJL)/Annihilation.o
-	$(CXX) $(CPPFLAGS) -o $(EXECL)/Annihilation $(OBJL)/Annihilation.o $(OBJ) 
-	$(EXECL)/Annihilation
 
 ResizeTest: $(OBJ) $(OBJL)/ResizeTest.o
-	$(CXX) $(CPPFLAGS) -o $(EXECL)/ResizeTest $(OBJL)/ResizeTest.o $(OBJ) 
-	$(EXECL)/ResizeTest
 
 ZeroCap: $(OBJ) $(OBJL)/ZeroCap.o
-	$(CXX) $(CPPFLAGS) -o $(EXECL)/ZeroCap $(OBJL)/ZeroCap.o $(OBJ) 
-	$(EXECL)/ZeroCap
 
 NotInit: $(OBJ) $(OBJL)/NotInit.o
-	$(CXX) $(CPPFLAGS) -o $(EXECL)/NotInit $(OBJL)/NotInit.o $(OBJ) 
-	$(EXECL)/NotInit
 
-$(OBJL)/stack.o: stack.cpp
+PopPoisoned: $(OBJ) $(OBJL)/PopPoisoned.o
+
+$(OBJL)/stack.o: stack.cpp config.h stack.hpp
+	$(CXX) $(CPPFLAGS) -c -o $(OBJL)/stack.o stack.cpp
 
 $(OBJL)/PopEmpty.o: $(TESTL)/PopEmpty.cpp
 
@@ -52,3 +44,5 @@ $(OBJL)/ResizeTest.o: $(TESTL)/ResizeTest.cpp
 $(OBJL)/ZeroCap.o: $(TESTL)/ZeroCap.cpp
 
 $(OBJL)/NotInit.o: $(TESTL)/NotInit.cpp
+
+$(OBJL)/PopPoisoned.o: $(TESTL)/PopPoisoned.cpp
