@@ -12,6 +12,8 @@
 #include <ctype.h>
 #include <signal.h>
 
+#define VRFCTR_CHECK 1
+
 const int FREE_SPOT = -1;
 
 struct ListNode
@@ -26,6 +28,7 @@ struct List
     int head = 0;
     int tail = 0;
     int free = 0;
+    int sorted = 0;
     size_t capacity = 0;
     ListNode* node;
 };
@@ -51,18 +54,24 @@ enum UseError
     CANT_RESIZE_LIST,
 };
 
+static const char DotCmd[] = {"dot -Tps graph2.gv -o graph2.ps"};
+
 int ListCtor (List* lst, size_t capacity);
 int ListDtor (List* lst);
 
-int LogicalToPhysical (List* lst, int logicalPlace);
+int ListLogicalToPhysical (List* lst, int logicalPlace);
 
-int ResizeList (List* lst);
+int ListResize (List* lst);
 
 int ListAddBefore (List* lst, int index, int val);
 int ListAddAfter (List* lst, int index, int val);
 int ListRemove (List* lst, int index);
 
 int ListDump(List* lst);
+int ListGraphicDump(List* lst);
 int ListVerify (List* lst);
+
+int ListNodeComparator (const void* arg1, const void* arg2);
+int ListSort(List* lst);
 
 #endif

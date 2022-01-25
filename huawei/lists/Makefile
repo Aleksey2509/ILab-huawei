@@ -4,7 +4,7 @@ OBJL = objfiles
 EXECL = executables
 HEADL = headers
 SRC = source
-OBJ = $(OBJL)/list.o $(OBJL)/sortlist.o
+OBJ = $(OBJL)/list.o
 
 $(OBJL)/%.o: $(SRC)/%.cpp 
 	$(CXX) $(CPPFLAGS) -c -o $@ $<
@@ -17,14 +17,6 @@ test: $(OBJL)/test.o $(OBJ)
 	$(CXX) $(CPPFLAGS) -o $(EXECL)/test $(OBJ) $(OBJL)/test.o
 	$(EXECL)/test
 
-graph: $(OBJL)/graphicdump.o $(OBJ)
-	$(CXX) $(CPPFLAGS) -o $(EXECL)/graph $(OBJ) $(OBJL)/graphicdump.o
-	$(EXECL)/graph
-
-$(OBJL)/test.o: $(SRC)/test.cpp $(HEADL)/sortlist.hpp
-
-$(OBJL)/graphicdump.o: $(SRC)/graphicdump.cpp
+$(OBJL)/test.o: $(SRC)/test.cpp
 
 $(OBJL)/list.o: $(SRC)/list.cpp $(HEADL)/list.hpp
-
-$(OBJL)/sortlist.o: $(SRC)/sortlist.cpp
