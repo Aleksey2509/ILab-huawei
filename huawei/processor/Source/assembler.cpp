@@ -1,276 +1,408 @@
-#include <stdarg.h>
-#include "../Headers/struct.hpp"
-#include "../Headers/ReadWrite.hpp"
+#include "../Headers/textFunc.hpp"
 #include "../Headers/stack.hpp"
 #include "../Headers/processor.hpp"
 
-#define ErrorToLog(Error) \
-{\
-    if(Error)\
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);\
-}
-
-enum Codes
-{
-    CHAR = 0,
-    INT
-};
-
-int CmdToCode(char* cmdbuf, char* codeBuf);
-int ArgToCode(char* arg, char* codeBuf, int* ip, int cp, int searchFor);
-int RegToCode(char* reg, char* codeBuf);
-int assembly(TEXT* text, char** cmdArr, char* codeBuf, Label* labels);
-
 int main(int argc, char* argv[])
 {
-    TEXT text {};
-    int Error = TEXT_ReadFromFile(&text, argv[1]);
+    assembler(argv[1]);
+
+    return 0;
+}
+
+int assembler(char* codeFile)
+{
+    Text codeText {};
+    codeData codeCoating {};
+
+    //PrintTextStdout(&text);
+    int error = codeDataCtor(codeFile, &codeText, &codeCoating);
+    if (error)
+        return error;
+
+    assemble(&codeText, &codeCoating);
+
+    return 0;
+}
+
+int codeDataCtor (char* codeFile, Text* codeText, codeData* codeCoating)
+{
+    int Error = TextReadFromFile(codeText, codeFile);
     if(Error)
     {
-        printf("%s\n", TEXT_GetError(Error));
+        fprintf(stderr, "%s\n", TextGetError(Error));
         return 0;
     }
 
-    //PrintTextStdout(&text);
+    codeCoating->cmdArr = (char**)calloc(codeText->nLines, sizeof(char*));
+    codeCoating->codeBuf = (char *)calloc(1, sizeof(Signature) + codeText->nLines + codeText->nLines * sizeof(elem_t));
+    codeCoating->labels = (Label*)calloc(MAX_LABELS, sizeof(Label));
 
-    char** cmdArr = (char**)calloc(text.nLines, sizeof(char*));
-    char* codeBuf = (char *)calloc(1, sizeof(Signature) + text.nLines * 2 * sizeof(elem_t));
-    Label* labels = (Label*)calloc(20, sizeof(Label));
+    if ((codeCoating->cmdArr == NULL) || (codeCoating->codeBuf == NULL) || (codeCoating->labels == NULL))
+        return MEM_ERROR;
 
-    for (int i = 0; i < text.nLines; i++)
+    for (int i = 0; i < codeText->nLines; i++)
     {
-        cmdArr[i] = text.lines[i].line;
+        codeCoating->cmdArr[i] = codeText->lines[i].line;
+    }
+
+    return 0;
+}
+
+int codeDataDtor (Text* codeText, codeData* codeCoating)
+{
+    free(codeCoating->cmdArr);
+    free(codeCoating->codeBuf);
+    free(codeCoating->labels);
+    TextDestroy(codeText);
+
+    return 0;
+}
+
+int assemble(Text* codeText, codeData* codeCoating)
+{
+    int error = firstPass(codeText->nLines, codeCoating);
+    if (error < 0)
+    {
+        codeDataDtor(codeText, codeCoating);
+        return error;
+    }
+    //debugPrintCode(&codeCoating);
+    error = secondPass(codeText->nLines, codeCoating);
+    if (error < 0)
+    {
+        codeDataDtor(codeText, codeCoating);
+        return error;
     }
 
     FILE* code_txt = fopen("code.txt", "wb");
-
-    int nBytes = assembly(&text, cmdArr, codeBuf, labels);
-
-    fwrite(codeBuf, sizeof(char), nBytes, code_txt);
+    fwrite(codeCoating->codeBuf, sizeof(char), codeCoating->ip, code_txt);
     fclose(code_txt);
 
-    TEXT_Destroy(&text);
+    codeDataDtor(codeText, codeCoating);
+
     return 0;
 }
 
-
-int assembly(TEXT* text, char** cmdArr, char* codeBuf, Label* labels)
+int firstPass(int codeLines, codeData* codeCoating)
 {
-    int num = 0;
-    int ip = 0;
-    int scaned = 0;
+    int labelsNum = 1;
+    int labelCallsNum = 0;
+    char** cmdArr = codeCoating->cmdArr;
 
-    for (int i = 0; i < text->nLines; i++)
+    for (int i = 0; i < codeLines; i++)
     {
-        char cmdBuf [1000] = { 0 };
+        //debugPrintCode(codeCoating);
+
+        char cmdBuf [BUFSIZ] = { 0 };
         sscanf(cmdArr[i], "%s", cmdBuf);
-        printf("In cmdBuf: %s\n", cmdBuf);
 
+        if (checkIfLabel(cmdBuf))
+        {
+            //printf("got a label %s\n", cmdBuf);
+            if (labelsNum == MAX_LABELS)
+            {
+                return LABEL_OVERFLOW;
+            }
+            codeCoating->labels[labelsNum].address = codeCoating->ip;
+            codeCoating->labels[labelsNum].name = strdup(cmdBuf);
+            labelsNum++;
+            continue;
+        }
+        //printf("In cmdBuf: %s\n", cmdBuf);
 
-        ip += CmdToCode(cmdBuf, codeBuf + ip);
+        int error = cmdToCode(cmdBuf, codeCoating->codeBuf + codeCoating->ip);
+        if (error == EMPTY_LINE)
+            continue;
+        if (error == UNKNOWN_CMD)
+        {
+            fprintf(stderr, "An error occured with line %d, scaned command \"%s\" not recognized\n", i, cmdBuf);
+            return UNKNOWN_CMD;
+        }
+        (codeCoating->ip)++;
 
         //printf("\nbefore push check = %d\n", codeBuf[ip - 1]);
-        if (codeBuf[ip - 1] == CMD_PUSH)
+        if (codeCoating->codeBuf[codeCoating->ip - 1] == CMD_PUSH)
         {
-            int cp = ip - 1;
-            int len = strlen("push") + 1;
-            int argscanned = 0;
-
-            if (cmdArr[i][len] == '[')
+            int cmdAddr = codeCoating->ip - 1;
+            int len = strlen("push");
+            //printf("\nbefore argument parse = %d\n", codeBuf[cmdAddr]);
+            int argScanned = parseArgs(cmdArr[i] + len, codeCoating, cmdAddr);
+            if (argScanned == INVALID_ARG)
             {
-                codeBuf[cp] |= 0x80;
-                len++;
-            }
-
-            int aboba = INT;
-
-            for (int j = 0; (j < 2) && (cmdArr[i][len] != '\0') && (cmdArr[i][len] != '\n'); j++)
-            {
-                //printf("\nin push search cycle, ip = %d\n", ip);
-                scaned = ArgToCode(cmdArr[i] + len, codeBuf, &ip, cp, aboba);
-                if (scaned)
-                    argscanned++;
-
-                //printf("\nbefore in arg search: aboba = %d,codebuf[ip - 1] = %d\n", aboba, codeBuf[ip - 1]);
-
-                if ((j == 1) && (argscanned == 0))
-                {
-                    printf("got an unknown argument for push in line %d: \"%s\"; exiting the programm", i, cmdArr[i] + len);
-                    exit(1);
-                }
-
-                aboba = CHAR;
+                fprintf(stderr, "An error occured with line %d, returned calue - %d\n", i, argScanned);
+                return INVALID_ARG;
             }
 
         }
 
-        else if (codeBuf[ip - 1] == CMD_POP)
+        else if (codeCoating->codeBuf[codeCoating->ip - 1] == CMD_POP)
         {
             //printf("\nin pop search cycle, ip = %d\n", ip);
-            int cp = ip - 1;
+            int cmdAddr = codeCoating->ip - 1;
             int len = strlen("pop");
 
-            if (cmdArr[i][len] == '[')
+            int argScanned = parseArgs(cmdArr[i] + len, codeCoating, cmdAddr);
+            if (argScanned == INVALID_ARG)
             {
-                codeBuf[cp] |= 0x80;
-                len++;
+                fprintf(stderr, "An error occured with line %d, returned calue - %d\n", i, argScanned);
+                return INVALID_ARG;
             }
-
-            int aboba = CHAR;
-
-            scaned = ArgToCode(cmdArr[i] + len, codeBuf, &ip, cp, aboba);
-
-            if (scaned == 0)
+            if (codeCoating->codeBuf[cmdAddr] & ARG_IMM && !(codeCoating->codeBuf[cmdAddr] & ARG_RAM))
             {
-                printf("got an unknown argument for pop in line %d: \"%s\"; exiting the programm", i, cmdArr[i] + len);
-                exit(1);
+                fprintf(stderr, "Tried to pop into imm value\n\n");
+                return INVALID_ARG;
             }
         }
 
-    }
+        else if (checkIfJmp(codeCoating->codeBuf[codeCoating->ip - 1]))
+        {
+            codeCoating->codeBuf[codeCoating->ip] = -1;
+            codeCoating->ip++;
+        }
 
-    return ip;
+    }
+    codeCoating->labelsNum = labelsNum;
+    //printf("bytes in func needed - %d\n", codeCoating->ip);
+
+    return 0;
 }
 
-
-int ArgToCode(char* arg, char* codeBuf, int* ip, int cp, int searchFor)
+int secondPass(int codeLines, codeData* codeCoating)
 {
-    int num = 0;
-    char regName [2] = {0};
-    int len = 0;
-    int scaned = 0;
+    char cmd = 0;
+    char* placeForLabelAddr = codeCoating->codeBuf;
+    int labelAddr = 0;
+    char** cmdArr = codeCoating->cmdArr;
 
-    if (searchFor == INT)
+
+    for (int i = 0; i < codeLines; i++)
     {
-        sscanf(arg, "%*[^0-9\n]%n", &len);
+        char cmdBuf [BUFSIZ] = { 0 };
+        char* labelName;
+        sscanf(cmdArr[i], "%s", cmdBuf);
+        if (checkIfLabel(cmdBuf))
+            continue;
 
-        scaned = sscanf(arg + len, "%d", &num);
-        //printf("scaned = %d, int = %d, len of buf - %d, ABOBA = %d\n", scaned, num, len, searchFor);
-
-        // for (int i = 0; i < len; i++)
-        //     printf("%c", forSkip[i]);
-        // printf("\n");
-
-        if (scaned == 1)
+        int res = cmdToCode(cmdBuf, &cmd);
+        if (res == EMPTY_LINE)
+            continue;
+        if (checkIfJmp(cmd))
         {
-            *(int*)(codeBuf + *ip) = num;
-
-            codeBuf[cp] |= 0x20;
-            *ip += sizeof(elem_t);
-
-            return (1 + len);
-        }
-    }
-
-    if (searchFor == CHAR)
-    {
-        sscanf(arg, "%*[ +0-9]%n", &len);
-        if (arg[len] == '\n' || arg[len] == '\0')
-            return 0;
-
-        scaned = sscanf(arg + len, "%2s", regName);
-        //printf("%2s\n", arg);
-        //printf("scaned = %d, regName - %2s len of buf - %d\n", scaned, regName, len);
-        if (scaned != 0)
-        {
-            RegToCode(regName, codeBuf + *ip);
-            codeBuf[cp] |= 0x40;
-            *ip += sizeof(char);
-
-            return (2 + len);
+            labelName = strtok(cmdArr[i] + strlen(cmdBuf), " ");
+            //printf("need to go to label \"%s\"\n", labelName);
+            labelAddr = searchForLabelAddr(labelName, codeCoating);
+            if (labelAddr < 0)
+            {
+                fprintf(stderr, "could not get label address of %s\n", labelName);
+                return labelAddr;
+            }
+            while (*placeForLabelAddr != -1)
+                placeForLabelAddr++;
+            //printf("place for label address - %p, labelAddr = %d\n", placeForLabelAddr, labelAddr);
+            *placeForLabelAddr = labelAddr;
         }
     }
 
     return 0;
 }
 
-
-
-int CmdToCode(char* cmd, char* codeBuf)
+int parseArgs(char* argStr, codeData* codeCoating, int cmdAddr)
 {
-    if(strcmp(cmd, "push") == 0)
+    int ip = codeCoating->ip;
+    //printf("got ip = %d\n", ip);
+    //printf("got arg %s, codebuf[cmdAddr] = %d\n", argStr, codeBuf[cmdAddr]);
+    argStr = removeComment(argStr);
+    //printf("after removing comment arg %s\n", argStr);
+    int retVal = 0;
+    if (checkForRAM(argStr))
     {
-        codeBuf[0] = CMD_PUSH;
-        return 1;
+        codeCoating->codeBuf[cmdAddr] |= ARG_RAM;
+        //printf("after removing RAM braces arg %s\n", argStr);
     }
 
-    else if(strcmp(cmd, "pop") == 0)
+    char* wordPtr, *savePtr;
+    char delim[] = " ";
+    int imm, reg;
+    int scanningOp = 0;
+    int scannedImm = 0;
+    int scannedReg = 0;
+    for(wordPtr = strtok_r(argStr, delim, &savePtr); (wordPtr != NULL); wordPtr = strtok_r(NULL, delim, &savePtr))
     {
-        codeBuf[0] = CMD_POP;
-        return 1;
-    }
+        //printf("got %s\n", wordPtr);
 
-    else if(strcmp(cmd, "add") == 0)
-    {
-        codeBuf[0] = CMD_ADD;
-        return 1;
-    }
+        if (scanningOp)
+        {
+            if (strcmp(wordPtr, "+"))
+            {
+                fprintf(stderr, "got %s instead of a '+'\n", wordPtr);
+                return INVALID_ARG;
+            }
 
-    else if(strcmp(cmd, "sub") == 0)
-    {
-        codeBuf[0] = CMD_SUB;
-        return 1;
-    }
+            scanningOp = 0;
+        }
+        else
+        {
+            int scanRes = sscanf(wordPtr, "%d", &imm);
 
-    else if(strcmp(cmd, "mul") == 0)
-    {
-        codeBuf[0] = CMD_MUL;
-        return 1;
-    }
+            if (scanRes == 1)
+            {
+                if (scannedImm)
+                {
+                    fprintf(stderr, "got number as a argument twice\n");
+                    return INVALID_ARG;
+                }
+                //printf("scanning imm\n");
+                codeCoating->codeBuf[cmdAddr] |= ARG_IMM;
 
-    else if(strcmp(cmd, "out") == 0)
-    {
-        codeBuf[0] = CMD_OUT;
-        return 1;
-    }
+                scannedImm = 1;
+            }
+            else
+            {
+                if (scannedReg)
+                {
+                    fprintf(stderr, "got register as a argument twice\n");
+                    return INVALID_ARG;
+                }
+                //printf("scanning reg \"%s\"\n", wordPtr);
+                reg = regToCode(wordPtr);
+                if (reg == SYNTAX_ERROR)
+                    return INVALID_ARG;
 
-    else if(strcmp(cmd, "ver") == 0)
-    {
-        codeBuf[0] = CMD_VER;
-        return 1;
-    }
+                scannedReg = 1;
+            }
 
-    else if(strcmp(cmd, "dmp") == 0)
-    {
-        codeBuf[0] = CMD_DMP;
-        return 1;
-    }
+            scanningOp = 1;
+        }
 
-    else if(strcmp(cmd, "hlt") == 0)
-    {
-        codeBuf[0] = CMD_HLT;
-        return 1;
     }
+    if (scannedReg)
+    {
+        codeCoating->codeBuf[ip] = reg;
+        codeCoating->codeBuf[cmdAddr] |= ARG_REG;
+        ip += sizeof(char);
+    }
+    if (scannedImm)
+    {
+        *(int*)(codeCoating->codeBuf + ip) = imm;
+        codeCoating->codeBuf[cmdAddr] |= ARG_IMM;
+        ip += sizeof(elem_t);
+    }
+    //printf("returning %d\n", codeBuf[cmdAddr]);
+    codeCoating->ip = ip;
 
-    else 
-    {
-        printf("Got an unknown command: \"%s\", stopping assembling\n", cmd);
-        exit(1);
-    }
+    return 0; // wtf
 }
 
-int RegToCode(char* reg, char* codeBuf)
+char* removeComment(char *str)
 {
-    if (strncmp(reg, "ax", 2) == 0)
+    char* commPtr;
+    if ((commPtr = strchr(str, ';')) != NULL)
+        *commPtr = '\0';
+    
+    return str;
+}
+
+int checkForRAM (char* str)
+{
+    char *bracePtr;
+    if ((bracePtr = strchr(str, '[')) != NULL)
     {
-        codeBuf[0] = 0x01;
+        *bracePtr = ' ';
+        if ((bracePtr = strchr(str, ']')) == NULL)
+            return INVALID_ARG;
+        else
+        *bracePtr = '\0';
+    }
+    else
+        return 0;
+
+    return 1;
+}
+
+int searchForLabelAddr(const char* labelName, const codeData* codeCoating)
+{
+    int labelsNum = codeCoating->labelsNum;
+    for (int i = 1; i < labelsNum; i++)
+    {
+        //printf("comparing \"%s\" with \"%s\"\n", labelName, codeCoating->labels[i].name);
+        if (!strcmp(labelName, codeCoating->labels[i].name))
+            return codeCoating->labels[i].address;
+    }
+    return SYNTAX_ERROR;
+}
+
+
+int checkIfLabel(char* cmdBuf)
+{
+    char* labelPtr;
+    cmdBuf = removeComment(cmdBuf);
+    if ((labelPtr = strchr(cmdBuf, ':')) != NULL) // everything after ':' symbol counts as comments for now
+    {
+        *labelPtr = '\0';
         return 1;
     }
-    if (strncmp(reg, "bx", 2) == 0)
-    {
-        codeBuf[0] = 0x02;
+    return 0;
+}
+
+int checkIfJmp(int cmdNum)
+{
+    if (cmdNum >= CMD_JA && cmdNum <= CMD_CALL)
         return 1;
-    }
-    if (strncmp(reg, "cx", 2) == 0)
+    return 0;
+}
+
+
+int cmdToCode(char* cmd, char* codeBuf)
+{
+    char* ifEmpty;
+    if ( (ifEmpty = strtok(cmd, " ")) == NULL)
+        return EMPTY_LINE;
+    for (int i = 0; i < sizeof(commandsArr)/ sizeof(commandsArr[0]); i++)
     {
-        codeBuf[0] = 0x03;
-        return 1;
+        if(strcmp(cmd, commandsArr[i].cmdName) == 0)
+        {
+            codeBuf[0] = commandsArr[i].cmdNum;
+            return 1;
+        }
     }
-    if (strncmp(reg, "dx", 2) == 0)
+    fprintf(stderr, "got unknown command \"%s\"\n", cmd);
+    return UNKNOWN_CMD;
+}
+
+int regToCode(char* reg)
+{
+    if (strcmp(reg, "ax") == 0)
     {
-        codeBuf[0] = 0x04;
-        return 1;
+        return 0x01;
     }
-    printf("Got an unknown register name: \"%s\", stopping assembling\n", reg);
-    exit(1);
- }
+    if (strcmp(reg, "bx") == 0)
+    {
+        return 0x02;
+    }
+    if (strcmp(reg, "cx") == 0)
+    {
+        return 0x03;
+    }
+    if (strcmp(reg, "dx") == 0)
+    {
+        return 0x04;
+    }
+    fprintf(stderr, "got unknown argument \"%s\"\n", reg);
+    return SYNTAX_ERROR;
+}
+
+
+int debugPrintCode(codeData* codeCoating)
+{
+    printf("ip - %d\n", codeCoating->ip);
+    fwrite(codeCoating->codeBuf, sizeof(char), codeCoating->ip, stdout);
+    printf("\n");
+
+    for (int i = 1; i < codeCoating->labelsNum; i++)
+    {
+        printf("label \"%s\" with addr %d\n", codeCoating->labels[i].name, codeCoating->labels[i].address);
+    }
+    printf("\n");
+
+    return 0;
+}

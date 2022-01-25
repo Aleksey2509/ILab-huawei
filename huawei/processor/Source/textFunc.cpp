@@ -1,24 +1,24 @@
-#include "../Headers/struct.hpp"
-#include "../Headers/ReadWrite.hpp"
+#include "../Headers/const.hpp"
+#include "../Headers/textFunc.hpp"
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int TEXT_ReadFromFile(TEXT* text, const char* FileName)
+int TextReadFromFile(Text* text, const char* FileName)
 {
-    int Error = TEXT_CreateBuffer(FileName, text);
+    int Error = TextCreateBuffer(FileName, text);
     if (Error)
     {
         return Error;
     }
 
-    Error = TEXT_Parcer(text);
+    Error = TextParcer(text);
 
     return Error;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int TEXT_Parcer (TEXT* text)
+int TextParcer (Text* text)
 {
     size_t allocatedLines = MAX_INPUT_LINES;
 
@@ -26,16 +26,16 @@ int TEXT_Parcer (TEXT* text)
     if ( !text->lines )
         return NOT_ENGH_MEM;
 
-    for (int i = 0; i < text->buffSize ;i++)
+    for (int i = 0; i < text->buffSize; i++)
     {
-        size_t len = mystrlen(text->buffer + i);
+        size_t len = strlen(text->buffer + i);
             if (len == 0)
                 continue;
 
         text->lines[text->nLines].line = (text->buffer + i);
         text->lines[text->nLines].lineLen = len;
 
-        i += len; // len
+        i += len;
         text->nLines++;
 
         if (text->nLines > (allocatedLines))
@@ -55,7 +55,7 @@ int TEXT_Parcer (TEXT* text)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int TEXT_CreateBuffer (const char* FileName, TEXT* text)
+int TextCreateBuffer (const char* FileName, Text* text)
 {
     if (!FileName)
         return NULL_FL;
@@ -83,6 +83,16 @@ int TEXT_CreateBuffer (const char* FileName, TEXT* text)
     }
 
     text->buffSize = fread(text->buffer, sizeof(char), FileInfo.st_size, input);
+
+    char* newlinePtr = text->buffer;
+    int i = 0;
+    while ( (newlinePtr = strchr(newlinePtr, '\n')) != NULL )
+    {
+        //printf("i - %d, %s\n", ++i, newlinePtr);
+        *newlinePtr = '\0';
+        newlinePtr++;
+    }
+
     fclose(input);
 
     return 0;
@@ -90,11 +100,12 @@ int TEXT_CreateBuffer (const char* FileName, TEXT* text)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int PrintTextStdout(TEXT* text)
+int PrintTextStdout(Text* text)
 {
+    fprintf(stdout, "nLines = %d\n", text->nLines);
     for (int i = 0; i < text->nLines; i++)
     {
-        fwrite(text->lines->line, sizeof(char), text->lines->lineLen, stdout);
+        fputs(text->lines->line + i, stdout);
         fputc('\n', stdout);
     }
     return 0;
@@ -102,7 +113,7 @@ int PrintTextStdout(TEXT* text)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-int PrintTextToFile (const char* path, const TEXT* text)
+int PrintTextToFile (const char* path, const Text* text)
 {
 
 	if (!text)
@@ -118,8 +129,7 @@ int PrintTextToFile (const char* path, const TEXT* text)
 
 	for(int i = 0; i < text->nLines; i++)
 	{
-        fwrite(text->lines->line, sizeof(char), text->lines->lineLen, file);
-        fputc('\n', file);
+        fputs(text->lines->line, stdout);
     }
     fclose(file);
 
@@ -129,7 +139,7 @@ int PrintTextToFile (const char* path, const TEXT* text)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-const char* TEXT_GetError (int Error)
+const char* TextGetError (int Error)
 {
     switch (Error)
         {
@@ -152,17 +162,7 @@ const char* TEXT_GetError (int Error)
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-size_t mystrlen(const char* string)
-{
-    size_t len = 0;
-    for (len = 0; (string[len] != '\n') && (string[len] != '\0') ; len++)
-    ;
-    return len;
-}
-
-//------------------------------------------------------------------------------------------------------------------------------
-
-int TEXT_Destroy (TEXT* text)
+int TextDestroy (Text* text)
 {
     if (text->buffer != NULL)
         free(text->buffer);

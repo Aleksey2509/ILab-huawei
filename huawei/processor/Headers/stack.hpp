@@ -11,20 +11,21 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <signal.h>
-#include "config.h"
+#include "config.hpp"
 
 typedef int elem_t;
 
-extern const elem_t POISON;
+const elem_t POISON = INT32_MIN;
 
 static char UpperBorder[] = "//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\//\\\\";
 static char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\///**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\";
 
+// STAXK_CTOR?
 #define StackCtor(stack, capacity) StackCreator(stack, capacity, __FILE__, __PRETTY_FUNCTION__, __LINE__)
 #define StackDtor(stack) StackDestructor(stack,  __FILE__, __PRETTY_FUNCTION__, __LINE__)
 #define CheckStack(stack) VerifyStack(stack, __FILE__, __PRETTY_FUNCTION__, __LINE__)
 
-#define TrackError(Error) \
+#define TrackError(stack, Error) \
 {\
     if(Error)\
     {\
@@ -33,7 +34,7 @@ static char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\/
     }\
 }
 
-#define TrackErrorWithCallPlc(Error, FileName, LineNum, FuncName) \
+#define TrackErrorWithCallPlc(stack, Error, FileName, LineNum, FuncName) \
 {\
     if(Error)\
     {\
@@ -48,9 +49,9 @@ typedef long unsigned hash_t;
 const canary_t DATA_CANARY_VAL =  0xBAD00BAD;
 const canary_t STK_CANARY_VAL  =  0xDED00DED;
 
-static elem_t* BAD_POINTER = (elem_t*)13;
+static elem_t* BAD_POINTER = (elem_t*)NULL;
 
-enum CritErrorMasks // crit errors - positive codes
+enum CritErrorMasks
 {
     NULL_STK_PTR    = 0x80,
     NOT_INIT        = 0x40,
@@ -102,14 +103,7 @@ struct Stack
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-static char StackErrors [][200] = {"Stack not properly initialized (has a null ptr)\n",
-                                   "Warning! Stack not initialized \n",
-                                   "ERROR! Capacity is less than size:\n",
-                                   "Stack not properly initialized (has a data null ptr). The user probably forgot to use StackCtor()\n",
-                                   "ERROR!!! THE CANARIES AROUND DATA WERE DAMAGED:",
-                                   "ERROR!!! THE CANARIES WERE AROUND STACK STRUCT WERE DAMAGED:\n",
-                                   "ERROR!!! STACK HASH HAS BEEN CHANGED!!! THE STACK HAS BEEN INTERACTED WITH IN AN WRONG WAY\n",
-                                   "ERROR!!! DATA HASH HAS BEEN CHANGED!!! THE STACK DATA HAS BEEN INTERACTED WITH IN AN WRONG WAY\n"};
+
 
 int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, const char* FuncName, int LineNum);
 int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, int LineNum);

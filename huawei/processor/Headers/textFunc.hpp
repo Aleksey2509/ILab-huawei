@@ -1,7 +1,27 @@
-// TEXT_FUNCTIONALITY?
-
 #ifndef READWRITE_HPP_INCL
 #define READWRITE_HPP_INCL
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <ctype.h>
+
+struct line_t
+{
+    char* line = 0;
+    int lineLen = 0;
+};
+
+struct Text
+{
+    char* buffer = 0;
+    long long buffSize = 0;
+    line_t* lines = 0;
+    int nLines = 0;
+};
 
 static const int MAX_INPUT_LINES = 10000;
 static const int MAX_LINE_LENGTH = 4096;
@@ -14,16 +34,7 @@ enum ErrorCodes
     NULL_TEXT_PTR,
     NOT_ENGH_MEM,
     RESIZE_ERR,
-    OK
 };
-
-const char ErrStrPtr [][100] = {"Unknown error\n",
-                                "No error\n",
-                                "Your file is too big\n", 
-                                "Bad file pointer\n",
-                                "Null text ptr\n",
-                                "Not enough memory for line memory allocation\n",
-                                "Could not get file info\n"};
 
 
 /*! 
@@ -39,7 +50,7 @@ const char ErrStrPtr [][100] = {"Unknown error\n",
  *                NOT_ENGH_MEM = -996 - if could not get mem for lines
  *                OK - everything is OK
  */
-int TEXT_ReadFromFile(TEXT* text, const char* FileName);
+int TextReadFromFile(Text* text, const char* FileName);
 
 /*! 
  * \brief This function reads from buffer with text, allocates memory for TEXT line_t array and fills it
@@ -51,7 +62,7 @@ int TEXT_ReadFromFile(TEXT* text, const char* FileName);
  * Return values: NOT_ENGH_MEM = -996 - if could not get mem for lines
  *                OK - everything is OK
  */
-int TEXT_Parcer (TEXT* text);
+int TextParcer (Text* text);
 
 /*! 
  * \brief This function reads from file and creates TEXT struct
@@ -64,7 +75,7 @@ int TEXT_Parcer (TEXT* text);
  *                NULL_TEXT_PTR = -997 - if was given null ptr to txt
  *                OK - everything is OK
  */
-int TEXT_CreateBuffer (const char* FileName, TEXT* text);
+int TextCreateBuffer (const char* FileName, Text* text);
 
 /*! 
  * \brief This function reallocates memory for line_t array
@@ -82,7 +93,7 @@ line_t* ReallocLineArr (line_t* lines, unsigned int* AllocedMemory);
  * It checks whether the path to file and TEXT pointer are valid
  * Then prints the text to pointed file
  */
-int PrintText(const char* path, TEXT* text);
+int PrintText(const char* path, Text* text);
 
 /*! 
  * \brief This function prints text to file
@@ -90,7 +101,7 @@ int PrintText(const char* path, TEXT* text);
  * It checks whether  TEXT pointer is valid
  * Then prints the text to Stdout
  */
-int PrintTextStdout(TEXT* text);
+int PrintTextStdout(Text* text);
 
 /*! 
  * \brief This function prints text to file
@@ -98,7 +109,7 @@ int PrintTextStdout(TEXT* text);
  * It checks whether the path to file and TEXT pointer are valid
  * Then prints the text to pointed file
  */
-int PrintTextToFile (const char* path, const TEXT* text);
+int PrintTextToFile (const char* path, const Text* text);
 
 /*! 
  * \brief This function prints text line to file
@@ -109,7 +120,7 @@ int PrintLineToFile(const line_t* str, FILE* stream);
  * \brief This function checks if error code corresponds to some state from enum ErrorCode 
  * and returns pointer to string with message, describing the error
  */
-const char* TEXT_GetError (int Error);
+const char* TextGetError (int Error);
 
 /*! 
  * \brief equvalent to strlen, but also counts '\n' as end of sting
@@ -119,7 +130,7 @@ size_t mystrlen(const char* string);
 /*! 
  * \brief This function free the memory aloocated for TEXT structure, if it was not free'd before
  */
-int TEXT_Destroy (TEXT* text);
+int TextDestroy (Text* text);
 
 
 #endif

@@ -1,131 +1,143 @@
 #include <stdarg.h>
-#include "../Headers/struct.hpp"
-#include "../Headers/ReadWrite.hpp"
+#include "../Headers/textFunc.hpp"
 #include "../Headers/stack.hpp"
 #include "../Headers/processor.hpp"
-
-#define ErrorToLog(Error) \
-{\
-    if(Error)\
-        StackDump(stack, __FILE__, __LINE__, __PRETTY_FUNCTION__, Error);\
-}
-
-
-struct Processor
-{
-    Stack stack {};
-    int reg[4] = {0};
-    char* codeArr = 0;
-    int ip = 0;
-    int* RAM = 0;
-
-};
-
-int process (Processor* processor);
-int CreateBuffer(const char* FileName, char** Buffer);
-
-int push(Stack* stack, int a);
-int pop(Stack* stack, elem_t* dst = 0);
-int add(Stack* stack);
-int sub(Stack* stack);
-int mul(Stack* stack);
-int div(Stack* stack);
-void out(Stack* stack);
-int ver(Stack* stack);
-void dmp(Stack* stack);
-
-
+#include "../Headers/const.hpp"
 
 int main(int argc, char* argv[])
 {
     Processor processor {};
-
-    int Error = CreateBuffer(argv[1], &(processor.codeArr));
+    int Error = processorCtor(argv[1], &processor);
     if (Error)
     {
-        printf("%s\n", GetError(Error));
-        return 0;
+        return Error;
     }
 
-    // for (int i = 0; i < 10; i++)
-    // {
-    //     printf("%d ", codeBuf[i]);
-    // }
+    Error = runProcessor(&processor);
+    if (Error)
+        fprintf(stderr, "An Error %d occured\n", Error);
 
-    StackCtor(&(processor.stack), 20);
+    processorDtor(&processor);
 
+    return 0;
+}
+
+int processorCtor(char* codeFile, Processor* processor)
+{
+    Text code {};
+    int Error = TextCreateBuffer(codeFile, &code);
+    if (Error)
+    {
+        fprintf(stderr, "%s\n", TextGetError(Error));
+        return Error;
+    }
+
+    processor->codeBuf = code.buffer;
+    StackCtor(&(processor->stack), 20);
+    StackCtor(&(processor->funcCalls), 20);
     for (int i = 0; i < 4; i++)
     {
-        processor.reg[i] = i + 1;
+        processor->reg[i] = 0;
     }
 
-    Error = process(&processor);
-    free(processor.codeArr);
-    StackDtor(&processor.stack);
+    return 0;
+}
+
+int processorDtor(Processor* processor)
+{
+    free(processor->codeBuf);
+    StackDtor(&(processor->funcCalls));
+    StackDtor(&(processor->stack));
 
     return 0;
 }
 
 
 
-int process (Processor* processor)
+int runProcessor (Processor* processor)
 {
     Stack* stack = &processor->stack;
-    const char* codeBuf = processor->codeArr;
+    Stack* retAddrStack = &processor->funcCalls;
+    const char* codeBuf = processor->codeBuf;
     int Error = 0;
     int ip = 0;
     int type = 0;
     int arg = 0;
     int cmd = 0;
+    int tmp1 = 0;
+    int tmp2 = 0;
 
     while(1)
     {
         //printf("\n\nin cycle: codebuf[%d] = %d\n\n", ip, codeBuf[ip]);
         cmd = codeBuf[ip] & 0x1F;
-        printf("%d, ip - %d\n", cmd, ip);
+        //fprintf(stderr, "%d, ip - %d, codebuf[ip] - %x\n", cmd, ip, codeBuf[ip]);
         switch(cmd)
         {
             case CMD_PUSH:
                         type = codeBuf[ip];
-                        if (type & 0x20)
+                        if (type & ARG_REG)
+                        {
+                            arg += processor->reg[codeBuf[ip += 1] - 1];
+                        }
+                        if (type & ARG_IMM)
                         {
                             arg += *(elem_t*)(codeBuf + ip + 1);
                             ip += sizeof(elem_t);
                         }
-                        if (type & 0x40)
+                        if (type & ARG_RAM)
                         {
-                            arg += processor->reg[codeBuf[ip += 1] - 1];
+                            arg = processor->RAM[arg];
                         }
                         ip += 1;
-                        push(stack, arg);
+                        Error = push(stack, arg);
+                        if(Error)
+                            return Error;
                         arg = 0;
                         break;
 
             case CMD_POP:
-                        pop(stack);
                         type = codeBuf[ip];
-                        if (type & 0x40)
+                        if (type & ARG_REG)
                         {
                             arg += processor->reg[codeBuf[ip += 1] - 1];
                         }
+                        if (type & ARG_IMM)
+                        {
+                            arg += *(elem_t*)(codeBuf + ip + 1);
+                            ip += sizeof(elem_t);
+                        }
+                        if (type & ARG_RAM)
+                            Error = pop(stack, processor->RAM + arg);
+                        else
+                            Error = pop(stack, processor->reg + codeBuf[ip] - 1);
+                        if(Error)
+                            return Error;
                         ip += 1;
-                        pop (stack, &arg);
                         arg = 0;
                         break;
 
-            case CMD_ADD: add(stack);
+            case CMD_ADD: Error = add(stack);
+                          if(Error)
+                            return Error;
                         ip += 1;
                         break;
 
-            case CMD_SUB: sub(stack);
+            case CMD_SUB: Error = sub(stack);
+                          if(Error)
+                            return Error;
                         ip += 1;
                         break;
 
-            case CMD_MUL: mul(stack);
+            case CMD_MUL: Error = mul(stack);
+                          if(Error)
+                            return Error;
                         ip += 1;
                         break;
 
-            case CMD_DIV: div(stack);
+            case CMD_DIV: Error = div(stack);
+                          if(Error)
+                            return Error;
                         ip += 1;
                         break;
 
@@ -133,13 +145,104 @@ int process (Processor* processor)
                         ip += 1;
                         break;
 
-            case CMD_VER: ver(stack);
+            case CMD_VER: Error = ver(stack);
+                          if(Error)
+                            return Error;
                         ip += 1;
                         break;
 
             case CMD_DMP: dmp(stack);
                         ip += 1;
                         break;
+
+            case CMD_JMP: Error = push (retAddrStack, ip + 1);
+                          if(Error)
+                            return Error;
+                        ip = codeBuf[ip + 1];
+                        break;
+            
+            case CMD_JA: Error = pop (stack, &tmp1);
+                         Error = pop (stack, &tmp2);
+                         if(Error)
+                            return Error;
+                        if (tmp1 > tmp2) 
+                        {
+                            ip = codeBuf[ip + 1];
+                        }
+                        else
+                            ip += 2;
+                        break;
+
+            case CMD_JAE: Error = pop (stack, &tmp1);
+                          Error = pop (stack, &tmp2);
+                          if(Error)
+                            return Error;
+                        if (tmp1 >= tmp2) 
+                        {
+                            ip = codeBuf[ip + 1];
+                        }
+                        else
+                            ip += 2;
+                        break;
+
+            case CMD_JB: Error = pop (stack, &tmp1);
+                         Error = pop (stack, &tmp2);
+                         if(Error)
+                            return Error;
+                        if (tmp1 < tmp2) 
+                        {
+                            ip = codeBuf[ip + 1];
+                        }
+                        else
+                            ip += 2;
+                        break;
+
+            case CMD_JBE: Error = pop (stack, &tmp1);
+                         Error = pop (stack, &tmp2);
+                         if(Error)
+                            return Error;
+                        if (tmp1 <= tmp2) 
+                        {
+                            ip = codeBuf[ip + 1];
+                        }
+                        else
+                            ip += 2;
+                        break;
+
+            case CMD_JE: Error = pop (stack, &tmp1);
+                         Error = pop (stack, &tmp2);
+                         if(Error)
+                            return Error;
+                        if (tmp1 == tmp2) 
+                        {
+                            ip = codeBuf[ip + 1];
+                        }
+                        else
+                            ip += 2;
+                        break;
+
+            case CMD_JNE: Error = pop (stack, &tmp1);
+                         Error = pop (stack, &tmp2);
+                         if(Error)
+                            return Error;
+                        if (tmp1 == tmp2) 
+                        {
+                            ip = codeBuf[ip + 1];
+                        }
+                        else
+                            ip += 2;
+                        break;
+
+            case CMD_CALL: Error = push(retAddrStack, ip + 2);
+                           if(Error)
+                            return Error;
+                           ip = codeBuf[ip + 1];
+                           break;
+
+            case CMD_RET: Error = pop(retAddrStack, &ip);
+                          if(Error)
+                            return Error;
+                          break;
 
             case CMD_HLT: return 0;
 
@@ -151,44 +254,6 @@ int process (Processor* processor)
 
     return 1;
 
-}
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-int CreateBuffer(const char* FileName, char** Buffer)
-{
-    if (!FileName)
-        return NULL_FL;
-
-    struct stat FileInfo;
-    int stat_flag = stat(FileName, &FileInfo);
-    if (stat_flag == -1)
-    {
-        return CANT_GET_FL_INFO;
-    }
-
-    off_t size = FileInfo.st_size;
-    *Buffer = (char* )calloc(size, sizeof(char));
-    //printf("in crtbuf: bufptr: %p\n", Buffer);
-
-    if ( (*Buffer) == NULL)
-        return CANT_ALLOC_BUF;
-
-    FILE* input = fopen(FileName, "rb");
-    if ( input == NULL)
-    {
-        free(*Buffer);
-        return NULL_FL;
-    }
-
-    size_t buffsize = fread(*Buffer, sizeof(char), size, input);
-    // for (int i = 0; i < buffsize; i++)
-    // {
-    //     printf("%d ", (*Buffer)[i]);
-    // }
-    fclose(input);
-
-    return OK;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -217,17 +282,17 @@ int add(Stack* stack)
     int b = 0;
 
     int Error = StackPop(stack, &a);
-    TrackError(Error);
+    TrackError(stack, Error);
 
     Error = StackPop(stack, &b);
-    TrackError(Error);
+    TrackError(stack, Error);
 
     int result = a + b;
 
     Error = StackPush(stack, result);
-    TrackError(Error);
+    TrackError(stack, Error);
 
-    return result;
+    return Error;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -238,17 +303,17 @@ int sub(Stack* stack)
     int b = 0;
 
     int Error = StackPop(stack, &a);
-    TrackError(Error);
+    TrackError(stack, Error);
 
     Error = StackPop(stack, &b);
-    TrackError(Error);
+    TrackError(stack, Error);
 
     int result = b - a;
 
     Error = StackPush(stack, result);
-    TrackError(Error);
+    TrackError(stack, Error);
 
-    return GOOD;
+    return Error;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -259,17 +324,17 @@ int mul(Stack* stack)
     int b = 0;
 
     int Error = StackPop(stack, &a);
-    TrackError(Error);
+    TrackError(stack, Error);
 
     Error = StackPop(stack, &b);
-    TrackError(Error);
+    TrackError(stack, Error);
 
     int result = a * b;
 
     Error = StackPush(stack, result);
-    TrackError(Error);
+    TrackError(stack, Error);
 
-    return result;
+    return Error;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -280,10 +345,10 @@ int div(Stack* stack)
     int b = 0;
 
     int Error = StackPop(stack, &a);
-    TrackError(Error);
+    TrackError(stack, Error);
 
     Error = StackPop(stack, &b);
-    TrackError(Error);
+    TrackError(stack, Error);
 
     if (b == 0)
         return -1;
@@ -291,9 +356,9 @@ int div(Stack* stack)
     int result = a / b;
 
     Error = StackPush(stack, result);
-    TrackError(Error);
+    TrackError(stack, Error);
 
-    return result;
+    return Error;
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -302,8 +367,9 @@ void out(Stack* stack)
 {
     if (stack->size == 0)
         return;
-
-    printf("%d\n", stack->data[stack->size - 1]);
+    int toPrint;
+    pop(stack, &toPrint);
+    printf("%d\n", toPrint);
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
