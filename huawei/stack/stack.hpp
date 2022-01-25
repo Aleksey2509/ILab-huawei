@@ -24,7 +24,7 @@ static char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\/
 #define StackDtor(stack) StackDestructor(stack,  __FILE__, __PRETTY_FUNCTION__, __LINE__)
 #define CheckStack(stack) VerifyStack(stack, __FILE__, __PRETTY_FUNCTION__, __LINE__)
 
-#define TrackError(Error) \
+#define TrackError(stack, Error) \
 {\
     if(Error)\
     {\
@@ -33,7 +33,7 @@ static char LowerBorder[] = "\n//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\//**\\\\/
     }\
 }
 
-#define TrackErrorWithCallPlc(Error, FileName, LineNum, FuncName) \
+#define TrackErrorWithCallPlc(stack, Error, FileName, LineNum, FuncName) \
 {\
     if(Error)\
     {\
@@ -53,11 +53,11 @@ static const int MULT_CONST = 2;
 static const int ENLARGE = 1;
 static const int REDUCE = -1;
 
-enum CritErrorMasks // crit errors - positive codes
+enum CritErrorMasks
 {
-    NULL_STK_PTR    = 0x80, // 4000
-    NOT_INIT        = 0x40, // 2000
-    NULL_DATA_PTR   = 0x20, // 1000
+    NULL_STK_PTR    = 0x80,
+    NOT_INIT        = 0x40,
+    NULL_DATA_PTR   = 0x20,
     CAP_LESS_SIZE   = 0x10,
     STK_CANARY_DMG  = 0x08,
     DATA_CANARY_DMG = 0x04,
@@ -66,7 +66,7 @@ enum CritErrorMasks // crit errors - positive codes
     OK = 0
 };
 
-enum UserError // not crit errors
+enum UserError
 {
     NULL_SRC_PTR = -1000,
     NOT_RESIZABLE,
@@ -106,14 +106,6 @@ struct Stack
 
 //------------------------------------------------------------------------------------------------------------------------------
 
-static char StackErrors [][200] = {"Stack not properly initialized (has a null ptr)\n",
-                                   "Warning! Stack not initialized \n",
-                                   "ERROR! Capacity is less than size:\n",
-                                   "Stack not properly initialized (has a data null ptr). The user probably forgot to use StackCtor()\n",
-                                   "ERROR!!! THE CANARIES AROUND DATA WERE DAMAGED:",
-                                   "ERROR!!! THE CANARIES WERE AROUND STACK STRUCT WERE DAMAGED:\n",
-                                   "ERROR!!! STACK HASH HAS BEEN CHANGED!!! THE STACK HAS BEEN INTERACTED WITH IN AN WRONG WAY\n",
-                                   "ERROR!!! DATA HASH HAS BEEN CHANGED!!! THE STACK DATA HAS BEEN INTERACTED WITH IN AN WRONG WAY\n"};
 
 int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, const char* FuncName, int LineNum);
 int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, int LineNum);
@@ -121,7 +113,7 @@ int StackPush(Stack* stack, elem_t src);
 int StackPop(Stack* stack, elem_t* dst = 0);
 int StackResize (Stack* stack, int mode, size_t NewSize = 0);
 const char* GetUserError (int Error);
-extern int ElemDump(elem_t* dataptr);
+extern int ElemDump(elem_t* dataptr, FILE* logfile);
 int StackDump (const Stack* stack, const char* FileName, int LineNum, const char* FuncName, int UserError = 0, const char reason[] = "Just to check");
 int VerifyStack (const Stack* stack, const char* FileName, const char* FuncName, int LineNum);
 

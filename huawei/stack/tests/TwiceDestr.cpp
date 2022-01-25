@@ -4,7 +4,7 @@ extern FILE* logfile;
 
 const int POISON = -100;
 
-int ElemDump(elem_t* ptr)
+int ElemDump(elem_t* ptr, FILE* logfile)
 {
     fprintf(logfile, "%d", *(int*)ptr);
     return 0;

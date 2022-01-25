@@ -12,9 +12,15 @@ $(OBJL)/%.o: $(TESTL)/%.cpp
 	$(CXX) $(CPPFLAGS) -o $(EXECL)/$@ $^
 	$(EXECL)/$@
 
-all: CompileStack
+all: CreateDir CompileStack
+
+CreateDir:
+	@mkdir -p executables
+	@mkdir -p objfiles
 
 CompileStack: $(OBJ)
+
+tests: PopEmpty TwiceDestr Annihilate ResizeTest ZeroCap NotInit PopPoisoned
 
 PopEmpty: $(OBJ) $(OBJL)/PopEmpty.o
 

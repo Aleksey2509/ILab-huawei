@@ -1,14 +1,11 @@
 #include "stack.hpp"
 
-
-FILE* logfile = fopen("log.txt", "w");
-
 //------------------------------------------------------------------------------------------------------------------------------
 
 
 #if HASH_DEF
 
-unsigned long Hash( const void* key, size_t len, unsigned long prime)
+hash_t Hash( const void* key, size_t len, unsigned long prime)
 {
     unsigned long hash = (unsigned long) len;
 
@@ -60,24 +57,48 @@ const char* GetUserError (int Error)
 {
     switch (Error)
     {
-        case NULL_SRC_PTR:   return "WARNING! User tried to push, but did not give a valid pointer\n\n";
+        case NULL_SRC_PTR: return "WARNING! User tried to push, but did not give a valid pointer\n\n";
 
         case NOTHING_TO_POP: return "WARNING! User tried to pop from an empty stack\n\n";
 
-        case NOT_RESIZABLE:  return "WARNING! User tried to push to a full stack, which could not be resized\n\n";
+        case NOT_RESIZABLE: return "WARNING! User tried to push to a full stack, which could not be resized\n\n";
 
         case USE_AFTER_DESTRUCT: return "WARNING! WARNING! The stack is being used after it's destruction!!! Futher use could lead to segmentation fault!!!\n\n";
 
         case POP_FROM_POISONED: return "WARNING! User tried to pop from poisoned area\n\n";
 
+        case 0: return "No error found";
+
         default: return "There is either a error with stack or stackDump was given unknown error code\n\n";
 
-        // "There is either a error with stack or stackDump was given unknown error code\n\n",
-        //                           "WARNING! User tried to push, but did not give a valid pointer\n\n", 
-        //                           "WARNING! User tried to pop from an empty stack\n\n",
-        //                           "WARNING! User tried to push to a full stack, which could not be resized\n\n",
-        //                           "WARNING! WARNING! The stack is being used after it's destruction!!! Futher use could lead to segmentation fault!!!\n\n",
-        //                           "WARNING! User tried to pop from poisoned area\n\n"
+    }
+}
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+const char* GetCritError (int Error)
+{
+    switch (Error)
+    {
+        case NULL_STK_PTR: return "Stack not properly initialized (has a null ptr)\n";
+
+        case NOT_INIT: return "Warning! Stack not initialized \n";
+
+        case NULL_DATA_PTR: return "ERROR! Capacity is less than size:\n";
+
+        case CAP_LESS_SIZE: return "Stack not properly initialized (has a data null ptr). The user probably forgot to use StackCtor()\n";
+
+        case STK_CANARY_DMG: return "ERROR!!! THE CANARIES AROUND DATA WERE DAMAGED:";
+
+        case DATA_CANARY_DMG: return "ERROR!!! THE CANARIES WERE AROUND STACK STRUCT WERE DAMAGED:\n";
+
+        case STK_HASH_ERR: return "ERROR!!! STACK HASH HAS BEEN CHANGED!!! THE STACK HAS BEEN INTERACTED WITH IN AN WRONG WAY\n";
+
+        case DATA_HASH_ERR: return "ERROR!!! DATA HASH HAS BEEN CHANGED!!! THE STACK DATA HAS BEEN INTERACTED WITH IN AN WRONG WAY\n";
+
+        case 0: return "No error found";
+
+        default: return "There is a user error with stack\n\n";
     }
 }
 
@@ -88,14 +109,14 @@ int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, co
 {
     if ( (FileName == NULL) || (FuncName == NULL) || (LineNum < 0) )
     {
-        printf("You freakin' dummy, you are not supposed to touch the funcname, filename or LineNum parametres, you were given a damn macros to autofill that\n");
+        fprintf(stderr, "The macros given in stack.hpp should be used");
         return 0;
     }
 
+    // Use macro?
     if (CheckStack(stack) == NULL_STK_PTR)
     {
-        StackDump(stack, FileName, LineNum, FuncName, NULL_STK_PTR, "to print null stk ptr");
-        return NULL_STK_PTR;
+        TrackErrorWithCallPlc(stack, NULL_STK_PTR, FileName, LineNum, FuncName);
     }
 
     #if CNRY_DEF
@@ -128,7 +149,6 @@ int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, co
     stack->DataHash  = GetDataHash(stack);
     #endif
 
-    //printf("IN CTOR: LeftCanary = %lX, RightCanary = %lX\n", ((canary_t*)stack->data)[-1], *(canary_t*)((char*)stack->data + stack->capacity * stack->DataSize));
     return 0;
 }
 
@@ -138,18 +158,11 @@ int StackCreator (Stack* stack, unsigned long capacity, const char* FileName, co
 
 int StackDestructor (Stack* stack, const char* FileName, const char* FuncName, int LineNum)
 {
-    if ( (FileName == NULL) || (FuncName == NULL) || (LineNum < 0) )
-    {
-        printf("You freakin' dummy, you are not supposed to touch the funcname, filename or LineNum parametres, you were given a damn macros to autofill that\n");
-        printf("exiting the programm");
-        exit(1);
-    }
-
     #if VRFCTR_DEF
     int Error = CheckStack(stack);
     if (Error)
     {
-        TrackErrorWithCallPlc(Error, FileName, LineNum, FuncName);
+        TrackErrorWithCallPlc(stack, Error, FileName, LineNum, FuncName);
     }
     #endif
 
@@ -179,13 +192,13 @@ int StackPush(Stack* stack, elem_t src)
     int Error = 0;
     #if VRFCTR_DEF
     Error = CheckStack(stack);
-    TrackError(Error);
+    TrackError(stack, Error);
     #endif
 
     if (stack->size == stack->capacity)
     {
         Error = StackResize (stack, ENLARGE);
-        TrackError(Error);
+        TrackError(stack, Error);
     }
 
     (stack->data)[stack->size] = src;
@@ -208,7 +221,7 @@ int StackPop(Stack* stack, elem_t* dst)
     int Error = 0;
     #if VRFCTR_DEF
     Error = CheckStack(stack);
-    TrackError(Error);
+    TrackError(stack, Error);
     #endif
 
     if (stack->size == 0)
@@ -225,9 +238,8 @@ int StackPop(Stack* stack, elem_t* dst)
 
     if ( stack->size < ((stack->capacity / 2) - 1)  )
     {
-        //printf("Starting reducing\n");
         Error = StackResize(stack, REDUCE);
-        TrackError(Error);
+        TrackError(stack, Error);
     }
 
     if (dst != 0)
@@ -254,7 +266,7 @@ int StackResize (Stack* stack, int mode, size_t NewSize)
 {
     #if VRFCTR_DEF
     int Error = CheckStack(stack);
-    TrackError(Error);
+    TrackError(stack, Error);
     #endif
 
     if (NewSize == 0)
@@ -278,7 +290,6 @@ int StackResize (Stack* stack, int mode, size_t NewSize)
     ((canary_t*)stack->data)[-1] = DATA_CANARY_VAL;
     *((canary_t*)( ( stack->data + NewSize / sizeof(elem_t) ))) = DATA_CANARY_VAL;
 
-    //printf("char + ... = %p, stack + ... = %p\n",(char*)stack->data + NewSize, stack->data + NewSize/sizeof(elem_t));
     #else
     void* tmp = realloc(stack->data, NewSize);
     if(tmp == 0)
@@ -301,9 +312,10 @@ int StackResize (Stack* stack, int mode, size_t NewSize)
 
 //------------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------
-
 int StackDump (const Stack* stack, const char* FileName, int LineNum, const char* FuncName, int UserError, const char reason[])
 {
+    FILE* logfile = fopen("log.txt", "a");
+
     fprintf(logfile, "%s%s\n\n", UpperBorder, UpperBorder);
 
     if ( (stack->PlaceCrtd.LineNum < 0) || (stack->PlaceCrtd.FileName == NULL) || (stack->PlaceCrtd.FuncName == NULL) )
@@ -332,21 +344,21 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
 
     if (StackError & NULL_STK_PTR)
     {
-        fprintf(logfile, "%s", StackErrors[0]);
+        fprintf(logfile, "%s", GetCritError(NULL_STK_PTR));
         return NULL_STK_PTR;
     }
 
     fprintf(logfile, "Stack [%p]\n", stack);
     if (StackError & NOT_INIT)
     {
-        fprintf(logfile, "%s", StackErrors[1]);
+        fprintf(logfile, "%s", GetCritError(NOT_INIT));
         fprintf(logfile, "%s%s\n\n", LowerBorder, LowerBorder);
         return NOT_INIT;
     }
 
     if(StackError & CAP_LESS_SIZE)
     {
-        fprintf(logfile, "%s", StackErrors[2]);
+        fprintf(logfile, "%s", GetCritError(CAP_LESS_SIZE));
     }
 
     fprintf(logfile, "Size = %lu\n", stack->size);
@@ -354,7 +366,7 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
 
     if (StackError & NULL_DATA_PTR)
     {
-        fprintf(logfile, "%s", StackErrors[3]);
+        fprintf(logfile, "%s", GetCritError(NULL_DATA_PTR));
         fprintf(logfile, "%s%s\n\n", LowerBorder, LowerBorder);
         return NULL_DATA_PTR;
     }
@@ -365,14 +377,14 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
 
     if (StackError & DATA_CANARY_DMG)
     {
-        fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", StackErrors[4], DATA_CANARY_VAL, DATA_CANARY_VAL);
+        fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", GetCritError(DATA_CANARY_DMG), DATA_CANARY_VAL, DATA_CANARY_VAL);
     }
     fprintf(logfile, "Canaries around data: Left Canary - %lX, RightCanary - %lX\n\n", ((canary_t*)stack->data)[-1], 
                                                 *(canary_t*)(stack->data + stack->capacity) );
 
     if (StackError & STK_CANARY_DMG)
     {
-        fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", StackErrors[5], STK_CANARY_VAL, STK_CANARY_VAL);
+        fprintf(logfile, "%s\nExpected values:\nLeft Canary - %lX, RightCanary - %lX;\ngot:\n", GetCritError(STK_CANARY_DMG), STK_CANARY_VAL, STK_CANARY_VAL);
     }
     fprintf(logfile, "Canaries around stack: Left Canary - %lX, RightCanary - %lX\n\n", stack->LeftCanary, stack->RightCanary);
 
@@ -382,12 +394,12 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
 
     if (StackError & STK_HASH_ERR)
     {
-        fprintf (logfile, "%s", StackErrors[6]);
+        fprintf (logfile, "%s", GetCritError(STK_HASH_ERR));
     }
 
     if (StackError & DATA_HASH_ERR)
     {
-        fprintf (logfile, "%s", StackErrors[7]);
+        fprintf (logfile, "%s", GetCritError(DATA_HASH_ERR));
     }
 
     #endif
@@ -396,7 +408,7 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     for (int i = 0; i < stack->size; i++)
     {
         fprintf(logfile, "data[%3d]: ", i);
-        ElemDump(stack->data + i);
+        ElemDump(stack->data + i, logfile);
         if (stack->data[i] == POISON)
             fprintf(logfile, "     <------ WARNING!!! This is very strange. This area is concedered as containing usefull data, but this is poisoned\n");
         fprintf(logfile, "\n");
@@ -408,7 +420,7 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     for (int i = stack->size; i < stack->capacity; i++)
     {
         fprintf(logfile, "data[%3d]: ", i);
-        ElemDump(stack->data + i);
+        ElemDump(stack->data + i, logfile);
         if (stack->data[i] == POISON)
             fprintf(logfile, "   (POISON)\n");
         else
@@ -419,6 +431,8 @@ int StackDump (const Stack* stack, const char* FileName, int LineNum, const char
     #endif
 
     fprintf(logfile, "%s%s\n\n", LowerBorder, LowerBorder);
+
+    fclose(logfile);
     return 0;
 }
 

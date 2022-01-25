@@ -1,4 +1,4 @@
-#include "../headers/list.hpp"
+#include "list.hpp"
 
 int ListCtor (List* lst, size_t capacity)
 {
@@ -450,7 +450,7 @@ int ListSort(List* lst)
             i++;
     }
 
-    for (int i = 1; i < takenNodes; )
+    for (int i = 1; i < takenNodes + 1; )
     {
         if ((i - 1) != lst->node[i].prev)
             swapNodes(lst->node + i, lst->node + lst->node[i].prev + 1);
@@ -465,13 +465,11 @@ int ListSort(List* lst)
     }
     lst->node[takenNodes].next = 0;
 
-    for (size_t i = takenNodes + 1; i < nodeCount; i++)
+    for (size_t i = takenNodes; i < nodeCount; i++)
     {
-        lst->node[i].next = i + 1;
+        lst->node[i].next = i + 1 % (nodeCount + 1);
         lst->node[i].prev = FREE_SPOT;
     }
-    lst->node[nodeCount].next = 0;
-    lst->node[nodeCount].prev = FREE_SPOT;
 
     lst->head = 1;
     lst->tail = takenNodes;

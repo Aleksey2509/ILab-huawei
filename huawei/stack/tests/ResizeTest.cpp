@@ -4,7 +4,7 @@ extern FILE* logfile;
 
 const int POISON = -100;
 
-int ElemDump(elem_t* ptr)
+int ElemDump(elem_t* ptr, FILE* logfile)
 {
     fprintf(logfile, "%d", *(int*)ptr);
     return 0;
@@ -38,11 +38,11 @@ int main()
 
     StackDump(&test, __FILE__, __LINE__, __PRETTY_FUNCTION__);
 
-    printf("Printing valArr:\n");
-    for (int i = 0; i < sizeof(valArr)/sizeof(int); i++)
-    {
-        printf("%d ", valArr[i]);
-    }
+    // printf("Printing valArr:\n");
+    // for (int i = 0; i < sizeof(valArr)/sizeof(int); i++)
+    // {
+    //     printf("%d ", valArr[i]);
+    // }
     printf("\n");
 
     StackDtor(&test);

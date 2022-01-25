@@ -1,5 +1,5 @@
 CXX = g++
-CPPFLAGS = -std=c++11
+CPPFLAGS = -std=c++11 -Iheaders
 OBJL = objfiles
 EXECL = executables
 HEADL = headers
@@ -13,10 +13,13 @@ all: CompileList
 
 CompileList: $(OBJ) 
 
-test: $(OBJL)/test.o $(OBJ)
+test: $(OBJ) $(OBJL)/test.o
 	$(CXX) $(CPPFLAGS) -o $(EXECL)/test $(OBJ) $(OBJL)/test.o
 	$(EXECL)/test
 
 $(OBJL)/test.o: $(SRC)/test.cpp
 
 $(OBJL)/list.o: $(SRC)/list.cpp $(HEADL)/list.hpp
+	@mkdir -p executables
+	@mkdir -p objfiles
+	$(CXX) $(CPPFLAGS) -c -o $@ $<

@@ -7,8 +7,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <signal.h>
-#include "../headers/list.hpp"
-#include "../headers/sortlist.hpp"
+#include "list.hpp"
 
 int main()
 {
@@ -44,7 +43,7 @@ int main()
     if (Error)
         printf("Error - %d\n", Error);
 
-    SortList(&testSubj, 5);
+    ListSort(&testSubj);
 
     Error = ListDump(&testSubj);
     if (Error)
@@ -67,6 +66,8 @@ int main()
     // Error = ListDump(&testSubj);
     // if (Error)
     //     printf("Error - %d\n", Error);
+
+    ListGraphicDump(&testSubj);
 
     ListDtor(&testSubj);
 }
